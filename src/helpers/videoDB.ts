@@ -9,8 +9,8 @@ export interface Video {
   comments_count: number;
   views_count: number;
   saves_count: number;
-  is_liked: number; // 0 or 1
-  is_saved: number; // 0 or 1
+  is_liked: number;
+  is_saved: number;
   profile_image?: string | null;
 }
 

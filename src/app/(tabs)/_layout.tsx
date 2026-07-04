@@ -1,24 +1,23 @@
 import {
   Feather,
   FontAwesome,
-  Ionicons as HomeIcon,
+  Ionicons,
   MaterialIcons,
 } from "@expo/vector-icons";
-import { Tabs } from "expo-router";
+import { Tabs, useRouter } from "expo-router";
 import { View } from "react-native";
 
-// Colors taken straight from our theme tokens (kept inline here since
-// expo-router's tabBarActiveTintColor etc. expect plain strings, not
-// className — the tab bar chrome itself is configured via props, not Tailwind).
 const COLORS = {
   background: "#000000",
   border: "#1f2937",
-  active: "red",
+  active: "#ffffff",
   inactive: "#6b7280",
   primary: "#dc2626",
 };
 
 export default function TabsLayout() {
+  const router = useRouter();
+
   return (
     <Tabs
       screenOptions={{
@@ -28,36 +27,39 @@ export default function TabsLayout() {
           borderTopColor: COLORS.border,
           height: 100,
         },
+        tabBarItemStyle: {
+          alignItems: "center",
+          justifyContent: "center",
+          paddingBottom: 0,
+          paddingTop: 10,
+        },
         tabBarActiveTintColor: COLORS.active,
         tabBarInactiveTintColor: COLORS.inactive,
         tabBarShowLabel: false,
       }}
     >
       <Tabs.Screen
-        name="profile"
+        name="index"
         options={{
-          title: "Profile",
+          title: "Home",
           tabBarIcon: ({ color, size }) => (
-            <HomeIcon name="person-circle" size={size} color={color} />
+            <Ionicons name="home" size={size} color={color} />
           ),
         }}
       />
-
       <Tabs.Screen
-        name="messages"
+        name="explore"
         options={{
-          title: "Messages",
+          title: "Explore",
           tabBarIcon: ({ color, size }) => (
-            <FontAwesome name="telegram" size={size} color={color} />
+            <MaterialIcons name="explore" size={size} color={color} />
           ),
         }}
       />
-
       <Tabs.Screen
         name="upload"
         options={{
           title: "Upload",
-
           tabBarIcon: () => (
             <View
               style={{
@@ -74,24 +76,27 @@ export default function TabsLayout() {
           ),
         }}
       />
-
       <Tabs.Screen
-        name="explore"
+        name="messages"
         options={{
-          title: "Explore",
+          title: "Messages",
           tabBarIcon: ({ color, size }) => (
-            <MaterialIcons name="explore" size={size} color={color} />
+            <FontAwesome name="telegram" size={size} color={color} />
           ),
         }}
       />
-
       <Tabs.Screen
-        name="index"
+        name="profile"
         options={{
-          title: "Home",
+          title: "Profile",
           tabBarIcon: ({ color, size }) => (
-            <HomeIcon name="home" size={size} color={color} />
+            <Ionicons name="person-circle" size={size} color={color} />
           ),
+        }}
+        listeners={{
+          tabPress: () => {
+            router.replace("/(tabs)/profile");
+          },
         }}
       />
     </Tabs>
