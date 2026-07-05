@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "khair_mobile_V",
-    "slug": "khair_mobile_V",
+    "slug": "khairmobilev",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -17,7 +17,8 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.abdalah_ameer.khairmobilev"
     },
     "web": {
       "output": "static",
@@ -40,6 +41,13 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "64dee5b0-8227-4b60-b9a7-0b855b8f9b84"
+      }
+    },
+    "owner": "abdalah_ameer"
   }
 }
