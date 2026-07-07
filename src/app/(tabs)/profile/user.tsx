@@ -1,15 +1,12 @@
 import GridItem from "@/components/GridItems";
 import VideoModal from "@/components/VideoModal";
-import {
-  apiClient,
-  clearCurrentUser,
-  fetcher,
-  getCurrentUser,
-} from "@/helpers/api";
+import { useAuth } from "@/context/AuthContext";
+import { fetcher } from "@/helpers/api";
 import { UserProfileType, VideoItem } from "@/helpers/videoDB";
+import { usePost } from "@/hooks/Requests";
 import * as ImagePicker from "expo-image-picker";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "expo-router";
+import { useMemo, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -23,16 +20,13 @@ import Toast from "react-native-toast-message";
 import useSWR from "swr";
 
 export default function OwnProfileScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [tab, setTab] = useState<"videos" | "liked" | "saved">("videos");
   const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
-
-  useEffect(() => {
-    getCurrentUser().then((u) => setCurrentUserId(u?.id ?? null));
-  }, []);
+  const { post } = usePost();
+  const { user, logout } = useAuth();
+  const currentUserId = user?.id ?? null;
 
   const {
     data: profileData,
@@ -96,7 +90,7 @@ export default function OwnProfileScreen() {
       } as any);
       formData.append("user_id", currentUserId);
 
-      await apiClient.post("/api/users/upload-profile-image", formData, {
+      await post("/api/users/upload-profile-image", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
       mutate();
@@ -112,7 +106,7 @@ export default function OwnProfileScreen() {
   };
 
   const handleLogout = async () => {
-    await clearCurrentUser();
+    await logout();
     router.replace("/(tabs)/profile");
   };
 
@@ -124,21 +118,20 @@ export default function OwnProfileScreen() {
     );
   }
 
-  const { user } = profileData;
   return (
     <View className="flex-1 bg-black">
       <ScrollView>
         <View className="items-center pt-10 pb-4">
           <View className="relative">
-            {user.profile_image ? (
+            {profileData?.user?.profile_image ? (
               <Image
-                source={{ uri: user.profile_image }}
+                source={{ uri: profileData.user.profile_image }}
                 className="w-24 h-24 border-2 border-gray-700 rounded-full"
               />
             ) : (
               <View className="items-center justify-center w-24 h-24 bg-gray-800 border-2 border-gray-700 rounded-full">
                 <Text className="text-3xl text-gray-400">
-                  {user.username[0].toUpperCase()}
+                  {profileData?.user?.username[0].toUpperCase()}
                 </Text>
               </View>
             )}
@@ -154,10 +147,11 @@ export default function OwnProfileScreen() {
           </View>
 
           <Text className="mt-3 text-2xl font-bold text-white">
-            @{user.username}
+            @{profileData?.user?.username}
           </Text>
           <Text className="mt-1 text-sm text-gray-400">
-            Joined {new Date(user.created_at).toLocaleDateString()}
+            Joined{" "}
+            {new Date(profileData?.user?.created_at).toLocaleDateString()}
           </Text>
 
           <TouchableOpacity onPress={handleLogout} className="mt-3">

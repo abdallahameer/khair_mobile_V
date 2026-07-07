@@ -1,4 +1,5 @@
-import { fetcher, getCurrentUser } from "@/helpers/api";
+import { useAuth } from "@/context/AuthContext";
+import { fetcher } from "@/helpers/api";
 import { usePost } from "@/hooks/Requests";
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
@@ -13,12 +14,12 @@ import {
   View,
 } from "react-native";
 import Animated, {
-  runOnJS,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
 import Toast from "react-native-toast-message";
+import { scheduleOnRN } from "react-native-worklets";
 import useSWR from "swr";
 
 interface Comment {
@@ -42,6 +43,7 @@ export default function CommentsPanel({
   const [text, setText] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const { post } = usePost();
+  const { user } = useAuth();
   const translateY = useSharedValue(800);
 
   const {
@@ -62,7 +64,7 @@ export default function CommentsPanel({
   const handleClose = () => {
     translateY.value = withTiming(800, { duration: 300 }, (finished) => {
       if (finished) {
-        runOnJS(onClose)();
+        scheduleOnRN(onClose);
       }
     });
   };
@@ -72,7 +74,6 @@ export default function CommentsPanel({
   }));
 
   const handleSubmit = async () => {
-    const user = await getCurrentUser();
     if (!user) {
       Toast.show({
         type: "info",
