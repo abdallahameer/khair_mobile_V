@@ -32,11 +32,13 @@ export default function FeedItem({
 
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  if (isActive) {
-    player.replay();
-  } else {
-    player.pause();
-  }
+  useEffect(() => {
+    if (isActive) {
+      player.replay();
+    } else {
+      player.pause();
+    }
+  }, [isActive]);
 
   useEffect(() => {
     if (isActive) {

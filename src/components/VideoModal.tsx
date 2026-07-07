@@ -1,9 +1,9 @@
 import { apiClient, fetcher } from "@/helpers/api";
 import { FontAwesome, Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
 import { VideoView, useVideoPlayer } from "expo-video";
 import { useEffect, useState } from "react";
 
+import { usePost } from "@/hooks/Requests";
 import {
   ActivityIndicator,
   Modal,
@@ -20,11 +20,11 @@ export default function VideoModal({
   onClose,
 }: {
   videoId: string;
-  currentUserId: string | null;
+  currentUserId?: string | null;
   onClose: () => void;
 }) {
-  const router = useRouter();
   const [openComments, setOpenComments] = useState(false);
+  const { post } = usePost();
   const { data: video, mutate } = useSWR(
     videoId
       ? `/api/videos/${videoId}${currentUserId ? `?viewer_id=${currentUserId}` : ""}`
@@ -59,7 +59,7 @@ export default function VideoModal({
           data: { user_id: currentUserId },
         });
       } else {
-        await apiClient.post(`/api/videos/${videoId}/like`, {
+        await post(`/api/videos/${videoId}/like`, {
           user_id: currentUserId,
         });
       }
@@ -83,7 +83,7 @@ export default function VideoModal({
           data: { user_id: currentUserId },
         });
       } else {
-        await apiClient.post(`/api/videos/${videoId}/save`, {
+        await post(`/api/videos/${videoId}/save`, {
           user_id: currentUserId,
         });
       }

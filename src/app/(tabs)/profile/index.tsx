@@ -1,4 +1,4 @@
-import { getCurrentUser } from "@/helpers/api";
+import { useAuth } from "@/context/AuthContext";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useState } from "react";
 import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
@@ -6,13 +6,12 @@ import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
 export default function ProfileTab() {
   const router = useRouter();
   const [checking, setChecking] = useState(true);
-
+  const { user } = useAuth();
   useFocusEffect(
     useCallback(() => {
       setChecking(true);
 
       const check = async () => {
-        const user = await getCurrentUser();
         if (user) {
           router.replace(`/(tabs)/profile/user`);
         } else {

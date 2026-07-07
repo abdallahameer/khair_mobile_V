@@ -1,3 +1,4 @@
+import { useAuth } from "@/context/AuthContext";
 import { setCurrentUser } from "@/helpers/api";
 import { usePost } from "@/hooks/Requests";
 import { useRouter } from "expo-router";
@@ -21,6 +22,7 @@ export default function AuthForm({ mode }: { mode: "registration" | "login" }) {
   const [loading, setLoading] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const { post } = usePost();
+  const { refreshUser } = useAuth();
   const {
     control,
     handleSubmit,
@@ -38,7 +40,7 @@ export default function AuthForm({ mode }: { mode: "registration" | "login" }) {
         mode === "login" ? "/api/users/login" : "/api/users/register";
 
       const response = await post(endpoint, {
-        username: data.userName.toLowerCase(),
+        username: data.userName,
         password: data.password,
       });
 
@@ -46,7 +48,7 @@ export default function AuthForm({ mode }: { mode: "registration" | "login" }) {
         id: response.id,
         username: response.username,
       });
-
+      await refreshUser();
       router.replace("/(tabs)");
     } catch (err: any) {
       const message =

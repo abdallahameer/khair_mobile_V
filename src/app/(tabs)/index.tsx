@@ -1,8 +1,8 @@
 import VideoFeed from "@/components/VideoFeed";
-import { apiClient, fetcher, getCurrentUser } from "@/helpers/api";
+import { useAuth } from "@/context/AuthContext";
+import { apiClient, fetcher } from "@/helpers/api";
 import { Video } from "@/helpers/videoDB";
 import { usePost } from "@/hooks/Requests";
-import { useEffect, useState } from "react";
 import { ActivityIndicator, Text, View } from "react-native";
 import Toast from "react-native-toast-message";
 import useSWR from "swr";
@@ -13,30 +13,16 @@ interface User {
 }
 
 export default function Home() {
-  const [user, setUser] = useState<User | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
+  const { user } = useAuth();
   const {
     data: videos,
     mutate: updateVideoInfo,
     isLoading: isLoading,
   } = useSWR(
-    user
-      ? user?.id
-        ? `/api/videos/approved?user_id=${user.id}`
-        : `/api/videos/approved`
-      : `/api/videos/approved`,
+    user ? `/api/videos/approved?user_id=${user.id}` : `/api/videos/approved`,
     fetcher,
   );
   const { post } = usePost();
-
-  useEffect(() => {
-    const fetchCurrentUser = async () => {
-      const user = await getCurrentUser();
-      setUser(user);
-    };
-    fetchCurrentUser();
-  }, []);
 
   const handleLike = async (item: Video) => {
     if (!user) {
@@ -94,14 +80,6 @@ export default function Home() {
     return (
       <View className="items-center justify-center flex-1 bg-black">
         <ActivityIndicator color="#dc2626" size="large" />
-      </View>
-    );
-  }
-
-  if (error) {
-    return (
-      <View className="items-center justify-center flex-1 bg-black">
-        <Text className="text-white">{error}</Text>
       </View>
     );
   }

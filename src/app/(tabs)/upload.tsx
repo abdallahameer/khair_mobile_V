@@ -1,9 +1,9 @@
-import { getCurrentUser } from "@/helpers/api";
+import { useAuth } from "@/context/AuthContext";
 import { usePost } from "@/hooks/Requests";
 import { Feather, MaterialIcons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
-import { useFocusEffect, useRouter } from "expo-router";
-import { useCallback, useState } from "react";
+import { useRouter } from "expo-router";
+import { useState } from "react";
 import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
 import Toast from "react-native-toast-message";
 
@@ -12,30 +12,8 @@ export default function Upload() {
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState<string | null>(null);
 
-  const [user, setUser] = useState<any>(null);
   const { post } = usePost();
-  useFocusEffect(
-    useCallback(() => {
-      const fetchCurrentUser = async () => {
-        const user = await getCurrentUser();
-        setUser(user);
-      };
-      fetchCurrentUser();
-    }, []),
-  );
-
-  const checkLogin = async () => {
-    if (!user) {
-      Toast.show({
-        type: "info",
-        text1: "Login required",
-        text2: "You need to login before uploading videos.",
-        visibilityTime: 3000,
-      });
-      return null;
-    }
-    return user;
-  };
+  const { user } = useAuth();
 
   const uploadFiles = async (assets: ImagePicker.ImagePickerAsset[]) => {
     if (!user || assets.length === 0) return;
@@ -92,7 +70,6 @@ export default function Upload() {
   };
 
   const handleCamera = async () => {
-    const user = await checkLogin();
     if (!user) return;
 
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
@@ -116,7 +93,6 @@ export default function Upload() {
   };
 
   const handleGallery = async () => {
-    const user = await checkLogin();
     if (!user) return;
 
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
