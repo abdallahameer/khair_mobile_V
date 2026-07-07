@@ -6,11 +6,6 @@ import { usePost } from "@/hooks/Requests";
 import { ActivityIndicator, Text, View } from "react-native";
 import Toast from "react-native-toast-message";
 import useSWR from "swr";
-interface User {
-  id: string;
-  username: string;
-  profile_image?: string | null;
-}
 
 export default function Home() {
   const { user } = useAuth();
@@ -35,19 +30,47 @@ export default function Home() {
       return;
     }
 
+    const wasLiked = item.is_liked;
+
+    updateVideoInfo(
+      (currentVideos: Video[] | undefined) =>
+        currentVideos?.map((v) =>
+          v.id === item.id
+            ? {
+                ...v,
+                is_liked: !wasLiked,
+                likes_count: wasLiked ? v.likes_count - 1 : v.likes_count + 1,
+              }
+            : v,
+        ),
+      false,
+    );
+
     try {
-      if (item.is_liked) {
+      if (wasLiked) {
         await apiClient.delete(`/api/videos/${item.id}/like`, {
           data: { user_id: user.id },
         });
-        updateVideoInfo();
       } else {
         await post(`/api/videos/${item.id}/like`, {
           user_id: user.id,
         });
-        updateVideoInfo();
       }
-    } catch {}
+    } catch {
+      updateVideoInfo(
+        (currentVideos: Video[] | undefined) =>
+          currentVideos?.map((v) =>
+            v.id === item.id
+              ? {
+                  ...v,
+                  is_liked: wasLiked,
+                  likes_count: wasLiked ? v.likes_count + 1 : v.likes_count - 1,
+                }
+              : v,
+          ),
+        false,
+      );
+    }
   };
 
   const handleSave = async (item: Video) => {
@@ -61,19 +84,35 @@ export default function Home() {
       return;
     }
 
+    const wasSaved = item.is_saved;
+
+    updateVideoInfo(
+      (currentVideos: Video[] | undefined) =>
+        currentVideos?.map((v) =>
+          v.id === item.id ? { ...v, is_saved: !wasSaved } : v,
+        ),
+      false,
+    );
+
     try {
-      if (item.is_saved) {
+      if (wasSaved) {
         await apiClient.delete(`/api/videos/${item.id}/save`, {
           data: { user_id: user.id },
         });
-        updateVideoInfo();
       } else {
         await post(`/api/videos/${item.id}/save`, {
           user_id: user.id,
         });
-        updateVideoInfo();
       }
-    } catch {}
+    } catch {
+      updateVideoInfo(
+        (currentVideos: Video[] | undefined) =>
+          currentVideos?.map((v) =>
+            v.id === item.id ? { ...v, is_saved: wasSaved } : v,
+          ),
+        false,
+      );
+    }
   };
 
   if (isLoading) {
