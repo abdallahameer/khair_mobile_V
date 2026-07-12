@@ -20,11 +20,13 @@ export default function VideoFeed({
   user,
   onLike,
   onSave,
+  onEndReached,
 }: {
   videos: Video[];
   user: User | null;
   onLike: (item: Video) => void;
   onSave: (item: Video) => void;
+  onEndReached: () => void;
 }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [commentsOpenFor, setCommentsOpenFor] = useState<string | null>(null);
@@ -88,6 +90,8 @@ export default function VideoFeed({
         })}
         snapToInterval={itemHeight}
         decelerationRate="fast"
+        onEndReached={onEndReached}
+        onEndReachedThreshold={2}
       />
 
       <CommentsPanel
