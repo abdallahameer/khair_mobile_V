@@ -1,7 +1,8 @@
 import GridItem from "@/components/GridItems";
 import VideoModal from "@/components/VideoModal";
+import { useAuth } from "@/context/AuthContext";
 import { fetcher } from "@/helpers/api";
-import { UserProfileType } from "@/helpers/videoDB";
+import { UserProfileType, VideosPage } from "@/helpers/videoDB";
 import Feather from "@expo/vector-icons/Feather";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
@@ -10,22 +11,63 @@ import {
   FlatList,
   Image,
   Pressable,
-  ScrollView,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
 import useSWR from "swr";
+import useSWRInfinite from "swr/infinite";
 
-export default function OwnProfileScreen() {
+export default function OtherProfileScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
+  const { user, loadingUser } = useAuth();
 
   const { data: profileData, isLoading } = useSWR<UserProfileType>(
-    id ? `/api/users/${id}?viewer_id=${id}` : null,
+    id ? `/api/users/${id}` : null,
     fetcher,
   );
+
+  const getVideosKey = (
+    pageIndex: number,
+    previousPageData: VideosPage | null,
+  ) => {
+    if (loadingUser) return null;
+    if (!id) return null;
+    if (previousPageData && !previousPageData.nextCursor) return null;
+
+    const cursorParams =
+      pageIndex === 0
+        ? ""
+        : `&cursor=${encodeURIComponent(previousPageData!.nextCursor!)}`;
+
+    const viewerParam = user ? `&viewer_id=${user.id}` : "";
+
+    return `/api/users/${id}/videos?limit=10${viewerParam}${cursorParams}`;
+  };
+
+  const {
+    data: videosData,
+    size: videosSize,
+    setSize: setVideosSize,
+    isLoading: isLoadingVideos,
+  } = useSWRInfinite<VideosPage>(getVideosKey, fetcher);
+
+  const videos = videosData ? videosData.flatMap((page) => page.videos) : [];
+  const isLoadingMoreVideos =
+    isLoadingVideos ||
+    (videosSize > 0 &&
+      videosData &&
+      typeof videosData[videosSize - 1] === "undefined");
+  const isVideosEnd =
+    videosData && videosData[videosData.length - 1]?.nextCursor === null;
+
+  const loadMoreVideos = () => {
+    if (!isLoadingMoreVideos && !isVideosEnd) {
+      setVideosSize(videosSize + 1);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -38,7 +80,7 @@ export default function OwnProfileScreen() {
   if (profileData) {
     return (
       <View className="flex-1 bg-black">
-        <ScrollView>
+        <View>
           <View className="items-center pt-10 pb-4">
             <Pressable onPress={() => router.replace("/(tabs)")}>
               <View className="flex-row items-center justify-end w-full px-4 py-3">
@@ -74,26 +116,34 @@ export default function OwnProfileScreen() {
               <Text className="font-bold text-white capitalize">Videos</Text>
             </TouchableOpacity>
           </View>
+        </View>
 
-          {profileData?.videos.length === 0 ? (
-            <Text className="mt-8 text-center text-gray-400">
-              No videos yet
-            </Text>
-          ) : (
-            <FlatList
-              data={profileData.videos}
-              keyExtractor={(v) => v.id.toString()}
-              numColumns={4}
-              scrollEnabled={false}
-              renderItem={({ item }) => (
-                <GridItem
-                  video={item}
-                  onPress={() => setSelectedVideoId(item.id.toString())}
+        {videos.length === 0 && !isLoadingMoreVideos ? (
+          <Text className="mt-8 text-center text-gray-400">No videos yet</Text>
+        ) : (
+          <FlatList
+            data={videos}
+            keyExtractor={(v) => v.id.toString()}
+            numColumns={4}
+            scrollEnabled={false}
+            onEndReached={loadMoreVideos}
+            onEndReachedThreshold={0.01}
+            renderItem={({ item }) => (
+              <GridItem
+                video={item}
+                onPress={() => setSelectedVideoId(item.id.toString())}
+              />
+            )}
+            ListFooterComponent={
+              isLoadingMoreVideos ? (
+                <ActivityIndicator
+                  color="#dc2626"
+                  style={{ marginVertical: 16 }}
                 />
-              )}
-            />
-          )}
-        </ScrollView>
+              ) : null
+            }
+          />
+        )}
 
         {selectedVideoId && (
           <VideoModal
