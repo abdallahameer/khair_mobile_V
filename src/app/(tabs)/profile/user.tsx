@@ -2,22 +2,22 @@ import GridItem from "@/components/GridItems";
 import VideoModal from "@/components/VideoModal";
 import { useAuth } from "@/context/AuthContext";
 import { fetcher } from "@/helpers/api";
-import { UserProfileType, VideoItem } from "@/helpers/videoDB";
+import { UserProfileType, VideosPage } from "@/helpers/videoDB";
 import { usePost } from "@/hooks/Requests";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
   Image,
-  ScrollView,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
 import Toast from "react-native-toast-message";
 import useSWR from "swr";
+import useSWRInfinite from "swr/infinite";
 
 export default function OwnProfileScreen() {
   const router = useRouter();
@@ -25,36 +25,148 @@ export default function OwnProfileScreen() {
   const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const { post } = usePost();
-  const { user, logout } = useAuth();
+  const { user, logout, loadingUser } = useAuth();
   const currentUserId = user?.id ?? null;
+
+  const getVideosKey = (
+    pageIndex: number,
+    previousPageData: VideosPage | null,
+  ) => {
+    if (loadingUser || !user) return null;
+    if (tab !== "videos") return null;
+    if (previousPageData && !previousPageData.nextCursor) return null;
+
+    const cursorParams =
+      pageIndex === 0
+        ? ""
+        : `&cursor=${encodeURIComponent(previousPageData!.nextCursor!)}`;
+
+    return `/api/users/${user.id}/videos?limit=10&viewer_id=${user.id}${cursorParams}`;
+  };
+
+  const {
+    data: videosData,
+    size: videosSize,
+    setSize: setVideosSize,
+    isLoading: isLoadingVideos,
+  } = useSWRInfinite<VideosPage>(getVideosKey, fetcher);
+
+  const ownVideos = videosData ? videosData.flatMap((page) => page.videos) : [];
+  const isLoadingMoreVideos =
+    isLoadingVideos ||
+    (videosSize > 0 &&
+      videosData &&
+      typeof videosData[videosSize - 1] === "undefined");
+  const isVideosEnd =
+    videosData && videosData[videosData.length - 1]?.nextCursor === null;
+
+  const loadMoreVideos = () => {
+    if (!isLoadingMoreVideos && !isVideosEnd) {
+      setVideosSize(videosSize + 1);
+    }
+  };
+
+  const getLikedKey = (
+    pageIndex: number,
+    previousPageData: VideosPage | null,
+  ) => {
+    if (loadingUser || !user) return null;
+    if (tab !== "liked") return null;
+    if (previousPageData && !previousPageData.nextCursor) return null;
+
+    const cursorParams =
+      pageIndex === 0
+        ? ""
+        : `&cursor=${encodeURIComponent(previousPageData!.nextCursor!)}`;
+
+    return `/api/users/${user.id}/liked-videos?limit=10${cursorParams}`;
+  };
+
+  const {
+    data: likedData,
+    size: likedSize,
+    setSize: setLikedSize,
+    isLoading: isLoadingLiked,
+  } = useSWRInfinite<VideosPage>(getLikedKey, fetcher);
+
+  const likedVideos = likedData ? likedData.flatMap((page) => page.videos) : [];
+  const isLoadingMoreLiked =
+    isLoadingLiked ||
+    (likedSize > 0 &&
+      likedData &&
+      typeof likedData[likedSize - 1] === "undefined");
+  const isLikedEnd =
+    likedData && likedData[likedData.length - 1]?.nextCursor === null;
+
+  const loadMoreLiked = () => {
+    if (!isLoadingMoreLiked && !isLikedEnd) {
+      setLikedSize(likedSize + 1);
+    }
+  };
+
+  const getSavedKey = (
+    pageIndex: number,
+    previousPageData: VideosPage | null,
+  ) => {
+    if (loadingUser || !user) return null;
+    if (tab !== "saved") return null;
+    if (previousPageData && !previousPageData.nextCursor) return null;
+
+    const cursorParams =
+      pageIndex === 0
+        ? ""
+        : `&cursor=${encodeURIComponent(previousPageData!.nextCursor!)}`;
+
+    return `/api/users/${user.id}/saved-videos?limit=10${cursorParams}`;
+  };
+
+  const {
+    data: savedData,
+    size: savedSize,
+    setSize: setSavedSize,
+    isLoading: isLoadingSaved,
+  } = useSWRInfinite<VideosPage>(getSavedKey, fetcher);
+
+  const savedVideos = savedData ? savedData.flatMap((page) => page.videos) : [];
+  const isLoadingMoreSaved =
+    isLoadingSaved ||
+    (savedSize > 0 &&
+      savedData &&
+      typeof savedData[savedSize - 1] === "undefined");
+  const isSavedEnd =
+    savedData && savedData[savedData.length - 1]?.nextCursor === null;
+
+  const loadMoreSaved = () => {
+    if (!isLoadingMoreSaved && !isSavedEnd) {
+      setSavedSize(savedSize + 1);
+    }
+  };
+
+  const videosToDisplay =
+    tab === "videos" ? ownVideos : tab === "liked" ? likedVideos : savedVideos;
+
+  const loadMore =
+    tab === "videos"
+      ? loadMoreVideos
+      : tab === "liked"
+        ? loadMoreLiked
+        : loadMoreSaved;
+
+  const isLoadingCurrentTab =
+    tab === "videos"
+      ? isLoadingMoreVideos
+      : tab === "liked"
+        ? isLoadingMoreLiked
+        : isLoadingMoreSaved;
 
   const {
     data: profileData,
     isLoading,
     mutate,
   } = useSWR<UserProfileType>(
-    currentUserId
-      ? `/api/users/${currentUserId}?viewer_id=${currentUserId}`
-      : null,
+    currentUserId ? `/api/users/${currentUserId}` : null,
     fetcher,
   );
-
-  const { data: likedVideos } = useSWR<VideoItem[]>(
-    currentUserId ? `/api/users/${currentUserId}/liked-videos` : null,
-    fetcher,
-  );
-
-  const { data: savedVideos } = useSWR<VideoItem[]>(
-    currentUserId ? `/api/users/${currentUserId}/saved-videos` : null,
-    fetcher,
-  );
-
-  const videosToDisplay = useMemo(() => {
-    if (tab === "videos") return profileData?.videos ?? [];
-    if (tab === "liked") return likedVideos ?? [];
-    if (tab === "saved") return savedVideos ?? [];
-    return [];
-  }, [tab, profileData?.videos, likedVideos, savedVideos]);
 
   const handleImageUpload = async () => {
     if (!currentUserId) return;
@@ -120,7 +232,7 @@ export default function OwnProfileScreen() {
 
   return (
     <View className="flex-1 bg-black">
-      <ScrollView>
+      <View>
         <View className="items-center pt-10 pb-4">
           <View className="relative">
             {profileData?.user?.profile_image ? (
@@ -178,24 +290,34 @@ export default function OwnProfileScreen() {
             </TouchableOpacity>
           ))}
         </View>
+      </View>
 
-        {videosToDisplay.length === 0 ? (
-          <Text className="mt-8 text-center text-gray-400">No videos yet</Text>
-        ) : (
-          <FlatList
-            data={videosToDisplay}
-            keyExtractor={(v) => v.id.toString()}
-            numColumns={3}
-            scrollEnabled={false}
-            renderItem={({ item }) => (
-              <GridItem
-                video={item}
-                onPress={() => setSelectedVideoId(item.id.toString())}
+      {videosToDisplay.length === 0 && !isLoadingCurrentTab ? (
+        <Text className="mt-8 text-center text-gray-400">No videos yet</Text>
+      ) : (
+        <FlatList
+          data={videosToDisplay}
+          keyExtractor={(v) => v.id.toString()}
+          numColumns={3}
+          scrollEnabled={true}
+          onEndReached={loadMore}
+          onEndReachedThreshold={0.01}
+          renderItem={({ item }) => (
+            <GridItem
+              video={item}
+              onPress={() => setSelectedVideoId(item.id.toString())}
+            />
+          )}
+          ListFooterComponent={
+            isLoadingCurrentTab ? (
+              <ActivityIndicator
+                color="#dc2626"
+                style={{ marginVertical: 16 }}
               />
-            )}
-          />
-        )}
-      </ScrollView>
+            ) : null
+          }
+        />
+      )}
 
       {selectedVideoId && currentUserId && (
         <VideoModal
