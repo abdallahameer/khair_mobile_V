@@ -40,8 +40,8 @@ export default function AuthForm({ mode }: { mode: "registration" | "login" }) {
         mode === "login" ? "/api/users/login" : "/api/users/register";
 
       const response = await post(endpoint, {
-        username: data.userName,
-        password: data.password,
+        username: data.userName.trim(),
+        password: data.password.trim(),
       });
 
       await setCurrentUser({
