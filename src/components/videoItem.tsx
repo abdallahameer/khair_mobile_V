@@ -93,7 +93,7 @@ export default function FeedItem({
 
       <TouchableOpacity
         onPress={goToProfile}
-        className="absolute flex-row items-center gap-2 bottom-20 right-4"
+        className="absolute flex-row items-center gap-2 bottom-32 right-4"
       >
         <Text
           className="text-lg font-bold text-white"
