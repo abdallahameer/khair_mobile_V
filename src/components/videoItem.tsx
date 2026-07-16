@@ -71,7 +71,7 @@ export default function FeedItem({
   return (
     <View
       style={{ height: itemHeight }}
-      className="items-center justify-center bg-black"
+      className="flex items-end justify-center bg-black "
     >
       <Pressable
         onPress={() => {
@@ -81,7 +81,7 @@ export default function FeedItem({
             player.play();
           }
         }}
-        style={{ width: "100%", height: "100%" }}
+        style={{ width: "100%", height: "auto" }}
       >
         <VideoView
           player={player}
