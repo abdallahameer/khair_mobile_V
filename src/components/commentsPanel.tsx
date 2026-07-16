@@ -117,8 +117,8 @@ export default function CommentsPanel({
           behavior={Platform.OS === "ios" ? "padding" : undefined}
           className="flex-1"
         >
-          <View className="flex-row items-center justify-between border-b border-gray-700 p-4">
-            <Text className="text-white font-semibold">
+          <View className="flex-row items-center justify-between p-4 border-b border-gray-700">
+            <Text className="font-semibold text-white">
               Comments {comments?.length ? `(${comments.length})` : ""}
             </Text>
             <TouchableOpacity onPress={handleClose}>
@@ -132,24 +132,24 @@ export default function CommentsPanel({
             contentContainerStyle={{ padding: 16, gap: 16 }}
             ListEmptyComponent={
               !isLoading ? (
-                <Text className="text-gray-500 text-center mt-8">
+                <Text className="mt-8 text-center text-gray-500">
                   No comments yet — be the first!
                 </Text>
               ) : null
             }
             renderItem={({ item }) => (
               <View className="flex-row gap-3">
-                <View className="h-8 w-8 rounded-full bg-gray-700 items-center justify-center">
-                  <Text className="text-white text-xs font-bold">
+                <View className="items-center justify-center w-8 h-8 bg-gray-700 rounded-full">
+                  <Text className="text-xs font-bold text-white">
                     {item.username[0].toUpperCase()}
                   </Text>
                 </View>
                 <View className="flex-1">
-                  <Text className="text-white text-sm font-medium">
+                  <Text className="text-sm font-medium text-white">
                     @{item.username}
                   </Text>
-                  <Text className="text-gray-300 text-sm">{item.text}</Text>
-                  <Text className="text-gray-500 text-xs mt-1">
+                  <Text className="text-sm text-gray-300">{item.text}</Text>
+                  <Text className="mt-1 text-xs text-gray-500">
                     {new Date(item.created_at).toLocaleDateString()}
                   </Text>
                 </View>
@@ -157,19 +157,19 @@ export default function CommentsPanel({
             )}
           />
 
-          <View className="flex-row gap-2 border-t border-gray-700 p-4">
+          <View className="flex-row gap-2 p-4 border-t border-gray-700">
             <TextInput
               value={text}
               onChangeText={setText}
               placeholder="Add a comment..."
               placeholderTextColor="#6b7280"
-              className="flex-1 bg-gray-800 rounded-full px-4 py-2 text-white"
+              className="flex-1 px-4 py-2 text-white bg-gray-800 rounded-full"
               onSubmitEditing={handleSubmit}
             />
             <TouchableOpacity
               onPress={handleSubmit}
               disabled={submitting || !text.trim()}
-              className="bg-red-600 rounded-full px-4 py-2 items-center justify-center"
+              className="items-center justify-center px-4 py-2 bg-red-600 rounded-full"
               style={{ opacity: submitting || !text.trim() ? 0.5 : 1 }}
             >
               <Text className="text-white">Post</Text>

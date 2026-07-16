@@ -1,8 +1,10 @@
 import { toastConfig } from "@/components/ToastNotification";
 import { AuthProvider } from "@/context/AuthContext";
+import { NavigationBar } from "expo-navigation-bar";
 import { Stack } from "expo-router";
 import Toast from "react-native-toast-message";
 import "../../global.css";
+
 export default function RootLayout() {
   return (
     <AuthProvider>
@@ -13,6 +15,7 @@ export default function RootLayout() {
         <Stack.Screen name="[id]" options={{ presentation: "modal" }} />
       </Stack>
       <Toast config={toastConfig} />
+      <NavigationBar style="auto" />
     </AuthProvider>
   );
 }

@@ -3,7 +3,6 @@ import { usePost } from "@/hooks/Requests";
 import { useIsFocused } from "expo-router";
 import { useRef, useState } from "react";
 import { Dimensions, FlatList, ViewToken } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import CommentsPanel from "./commentsPanel";
 import FeedItem from "./videoItem";
 
@@ -30,9 +29,8 @@ export default function VideoFeed({
 }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [commentsOpenFor, setCommentsOpenFor] = useState<string | null>(null);
-  const insets = useSafeAreaInsets();
   const isFocused = useIsFocused();
-  const itemHeight = SCREEN_HEIGHT - insets.top - insets.bottom;
+  const itemHeight = SCREEN_HEIGHT;
   const { post } = usePost();
 
   const viewedVideos = useRef<Set<string>>(new Set());
