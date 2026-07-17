@@ -34,10 +34,12 @@ interface Comment {
 export default function CommentsPanel({
   videoId,
   visible,
+  bottomInset,
   onClose,
 }: {
   videoId: string;
   visible: boolean;
+  bottomInset: number;
   onClose: () => void;
 }) {
   const [text, setText] = useState("");
@@ -45,7 +47,6 @@ export default function CommentsPanel({
   const { post } = usePost();
   const { user } = useAuth();
   const translateY = useSharedValue(800);
-
   const {
     data: comments,
     isLoading,
@@ -157,7 +158,10 @@ export default function CommentsPanel({
             )}
           />
 
-          <View className="flex-row gap-2 p-4 border-t border-gray-700">
+          <View
+            style={{ paddingBottom: Math.max(bottomInset, 16) }}
+            className="flex-row gap-2 px-4 pt-4 border-t border-gray-700"
+          >
             <TextInput
               value={text}
               onChangeText={setText}
