@@ -34,7 +34,6 @@ export default function VideoFeed({
   const itemHeight = SCREEN_HEIGHT;
   const { post } = usePost();
   const inset = useSafeAreaInsets();
-  console.log("inset bottom", inset.bottom);
   const viewedVideos = useRef<Set<string>>(new Set());
 
   const handleView = async (videoId: string) => {

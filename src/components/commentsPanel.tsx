@@ -7,7 +7,6 @@ import {
   FlatList,
   KeyboardAvoidingView,
   Modal,
-  Platform,
   Text,
   TextInput,
   TouchableOpacity,
@@ -115,7 +114,8 @@ export default function CommentsPanel({
         className="absolute bottom-0 left-0 right-0 h-[70%] bg-gray-900 rounded-t-2xl"
       >
         <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          keyboardVerticalOffset={0}
+          behavior="padding"
           className="flex-1"
         >
           <View className="flex-row items-center justify-between p-4 border-b border-gray-700">
