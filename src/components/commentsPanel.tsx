@@ -2,23 +2,18 @@ import { useAuth } from "@/context/AuthContext";
 import { fetcher } from "@/helpers/api";
 import { usePost } from "@/hooks/Requests";
 import { Ionicons } from "@expo/vector-icons";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   FlatList,
-  KeyboardAvoidingView,
-  Modal,
+  Keyboard,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-} from "react-native-reanimated";
+
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
-import { scheduleOnRN } from "react-native-worklets";
 import useSWR from "swr";
 
 interface Comment {
@@ -33,19 +28,22 @@ interface Comment {
 export default function CommentsPanel({
   videoId,
   visible,
-  bottomInset,
   onClose,
 }: {
   videoId: string;
   visible: boolean;
-  bottomInset: number;
   onClose: () => void;
 }) {
   const [text, setText] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [addCommentModal, setAddCommentModal] = useState(false);
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState<number>(0);
   const { post } = usePost();
   const { user } = useAuth();
-  const translateY = useSharedValue(800);
+  const insets = useSafeAreaInsets();
+  const inputRef = useRef<TextInput>(null);
+  const bottomInset = insets.bottom;
+
   const {
     data: comments,
     isLoading,
@@ -55,23 +53,15 @@ export default function CommentsPanel({
     fetcher,
   );
 
-  useEffect(() => {
-    if (visible) {
-      translateY.value = withTiming(0, { duration: 300 });
-    }
-  }, [visible, videoId]);
-
   const handleClose = () => {
-    translateY.value = withTiming(800, { duration: 300 }, (finished) => {
-      if (finished) {
-        scheduleOnRN(onClose);
-      }
-    });
+    onClose();
   };
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: translateY.value }],
-  }));
+  const handleCloseInput = () => {
+    inputRef.current?.blur();
+
+    setAddCommentModal(false);
+  };
 
   const handleSubmit = async () => {
     if (!user) {
@@ -93,94 +83,117 @@ export default function CommentsPanel({
       });
       setText("");
       mutate();
+      handleCloseInput();
     } catch {
     } finally {
       setSubmitting(false);
     }
   };
 
+  useEffect(() => {
+    const showSub = Keyboard.addListener("keyboardDidShow", (e) => {
+      setIsKeyboardVisible(e.endCoordinates.height);
+    });
+    const hideSub = Keyboard.addListener("keyboardDidHide", () => {
+      setIsKeyboardVisible(0);
+    });
+
+    return () => {
+      showSub.remove;
+      hideSub.remove;
+    };
+  }, []);
+
   if (!visible) return null;
 
   return (
-    <Modal transparent visible={visible} animationType="none">
+    <>
       <TouchableOpacity
-        className="flex-1 bg-black/50"
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 10,
+        }}
+        className="bg-black/50"
         activeOpacity={1}
         onPress={handleClose}
       />
 
-      <Animated.View
-        style={animatedStyle}
+      <View
+        style={{ zIndex: 11 }}
         className="absolute bottom-0 left-0 right-0 h-[70%] bg-gray-900 rounded-t-2xl"
       >
-        <KeyboardAvoidingView
-          keyboardVerticalOffset={0}
-          behavior="padding"
-          className="flex-1"
-        >
-          <View className="flex-row items-center justify-between p-4 border-b border-gray-700">
-            <Text className="font-semibold text-white">
-              Comments {comments?.length ? `(${comments.length})` : ""}
-            </Text>
-            <TouchableOpacity onPress={handleClose}>
-              <Ionicons name="close" size={24} color="#9ca3af" />
-            </TouchableOpacity>
-          </View>
+        <View className="flex-row items-center justify-between p-4 border-b border-gray-700">
+          <Text className="font-semibold text-white">
+            Comments {comments?.length ? `(${comments.length})` : ""}
+          </Text>
+          <TouchableOpacity onPress={handleClose}>
+            <Ionicons name="close" size={24} color="#9ca3af" />
+          </TouchableOpacity>
+        </View>
 
-          <FlatList
-            data={comments}
-            keyExtractor={(c) => c.id}
-            contentContainerStyle={{ padding: 16, gap: 16 }}
-            ListEmptyComponent={
-              !isLoading ? (
-                <Text className="mt-8 text-center text-gray-500">
-                  No comments yet — be the first!
+        <FlatList
+          data={comments}
+          keyExtractor={(c) => c.id}
+          contentContainerStyle={{ padding: 16, gap: 16 }}
+          ListEmptyComponent={
+            !isLoading ? (
+              <Text className="mt-8 text-center text-gray-500">
+                No comments yet — be the first!
+              </Text>
+            ) : null
+          }
+          renderItem={({ item }) => (
+            <View className="flex-row gap-3">
+              <View className="items-center justify-center w-8 h-8 bg-gray-700 rounded-full">
+                <Text className="text-xs font-bold text-white">
+                  {item.username[0].toUpperCase()}
                 </Text>
-              ) : null
-            }
-            renderItem={({ item }) => (
-              <View className="flex-row gap-3">
-                <View className="items-center justify-center w-8 h-8 bg-gray-700 rounded-full">
-                  <Text className="text-xs font-bold text-white">
-                    {item.username[0].toUpperCase()}
-                  </Text>
-                </View>
-                <View className="flex-1">
-                  <Text className="text-sm font-medium text-white">
-                    @{item.username}
-                  </Text>
-                  <Text className="text-sm text-gray-300">{item.text}</Text>
-                  <Text className="mt-1 text-xs text-gray-500">
-                    {new Date(item.created_at).toLocaleDateString()}
-                  </Text>
-                </View>
               </View>
-            )}
+              <View className="flex-1">
+                <Text className="text-sm font-medium text-white">
+                  @{item.username}
+                </Text>
+                <Text className="text-sm text-gray-300">{item.text}</Text>
+                <Text className="mt-1 text-xs text-gray-500">
+                  {new Date(item.created_at).toLocaleDateString()}
+                </Text>
+              </View>
+            </View>
+          )}
+        />
+
+        <View
+          className="flex-row gap-2 px-4 pt-4 bg-gray-900 border-t border-gray-700"
+          style={{
+            paddingBottom:
+              isKeyboardVisible > 0
+                ? isKeyboardVisible - Math.max(bottomInset, 16)
+                : Math.max(bottomInset, 16),
+          }}
+        >
+          <TextInput
+            value={text}
+            onChangeText={setText}
+            placeholder="Add a comment..."
+            placeholderTextColor="#6b7280"
+            className="flex-1 px-4 py-2 text-white bg-gray-800 rounded-full"
+            onSubmitEditing={handleSubmit}
           />
 
-          <View
-            style={{ paddingBottom: Math.max(bottomInset, 16) }}
-            className="flex-row gap-2 px-4 pt-4 border-t border-gray-700"
+          <TouchableOpacity
+            onPress={handleSubmit}
+            disabled={submitting || !text.trim()}
+            className="items-center justify-center px-4 py-2 bg-red-600 rounded-full"
+            style={{ opacity: submitting || !text.trim() ? 0.5 : 1 }}
           >
-            <TextInput
-              value={text}
-              onChangeText={setText}
-              placeholder="Add a comment..."
-              placeholderTextColor="#6b7280"
-              className="flex-1 px-4 py-2 text-white bg-gray-800 rounded-full"
-              onSubmitEditing={handleSubmit}
-            />
-            <TouchableOpacity
-              onPress={handleSubmit}
-              disabled={submitting || !text.trim()}
-              className="items-center justify-center px-4 py-2 bg-red-600 rounded-full"
-              style={{ opacity: submitting || !text.trim() ? 0.5 : 1 }}
-            >
-              <Text className="text-white">Post</Text>
-            </TouchableOpacity>
-          </View>
-        </KeyboardAvoidingView>
-      </Animated.View>
-    </Modal>
+            <Text className="text-white">Post</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </>
   );
 }
