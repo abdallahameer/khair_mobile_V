@@ -36,7 +36,6 @@ export default function CommentsPanel({
 }) {
   const [text, setText] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [addCommentModal, setAddCommentModal] = useState(false);
   const [isKeyboardVisible, setIsKeyboardVisible] = useState<number>(0);
   const { post } = usePost();
   const { user } = useAuth();
@@ -59,8 +58,6 @@ export default function CommentsPanel({
 
   const handleCloseInput = () => {
     inputRef.current?.blur();
-
-    setAddCommentModal(false);
   };
 
   const handleSubmit = async () => {
