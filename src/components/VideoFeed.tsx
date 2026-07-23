@@ -2,7 +2,7 @@ import { Video } from "@/helpers/videoDB";
 import { usePost } from "@/hooks/Requests";
 import { useIsFocused } from "expo-router";
 import { useRef, useState } from "react";
-import { Dimensions, FlatList, ViewToken } from "react-native";
+import { Dimensions, FlatList, View, ViewToken } from "react-native";
 import CommentsPanel from "./commentsPanel";
 import FeedItem from "./videoItem";
 
@@ -32,18 +32,14 @@ export default function VideoFeed({
   const isFocused = useIsFocused();
   const itemHeight = SCREEN_HEIGHT;
   const { post } = usePost();
-
   const viewedVideos = useRef<Set<string>>(new Set());
 
   const handleView = async (videoId: string) => {
     if (viewedVideos.current.has(videoId)) return;
-
     if (!user) return;
 
     try {
-      await post(`/api/videos/${videoId}/view`, {
-        user_id: user.id,
-      });
+      await post(`/api/videos/${videoId}/view`, { user_id: user.id });
       viewedVideos.current.add(videoId);
     } catch {}
   };
@@ -61,7 +57,7 @@ export default function VideoFeed({
   }).current;
 
   return (
-    <>
+    <View style={{ flex: 1 }}>
       <FlatList
         data={videos}
         keyExtractor={(item) => item.id.toString()}
@@ -97,6 +93,6 @@ export default function VideoFeed({
         visible={commentsOpenFor !== null}
         onClose={() => setCommentsOpenFor(null)}
       />
-    </>
+    </View>
   );
 }

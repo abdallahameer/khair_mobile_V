@@ -81,7 +81,7 @@ export default function FeedItem({
             player.play();
           }
         }}
-        style={{ width: "100%", height: "auto" }}
+        style={{ width: "100%", height: itemHeight }}
       >
         <VideoView
           player={player}
