@@ -1,11 +1,21 @@
-import { useLocalSearchParams } from "expo-router/build/hooks";
-import { Text, View } from "react-native";
+import ChatScreen from "@/components/chatScreen";
+import { useLocalSearchParams } from "expo-router";
 
-export default function Conversation() {
-  const { conversationId } = useLocalSearchParams();
+export default function ChatByConversation() {
+  const { conversationId, otherUserId, otherUsername, otherProfileImage } =
+    useLocalSearchParams<{
+      conversationId: string;
+      otherUserId: string;
+      otherUsername: string;
+      otherProfileImage?: string;
+    }>();
+
   return (
-    <View className="items-center justify-center flex-1 bg-black">
-      <Text className="text-xl text-white">{conversationId}</Text>
-    </View>
+    <ChatScreen
+      conversationId={conversationId}
+      otherUserId={otherUserId}
+      otherUsername={otherUsername}
+      otherProfileImage={otherProfileImage ?? null}
+    />
   );
 }

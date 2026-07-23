@@ -99,3 +99,25 @@ export interface VideosPage {
   videos: Video[];
   nextCursor: string | null;
 }
+
+export interface Message {
+  id: string;
+  conversation_id: string;
+  sender_id: string;
+  text: string;
+  created_at: string;
+}
+
+export interface MessagesPage {
+  messages: Message[];
+  nextCursor: string | null;
+}
+
+export interface ConversationListItem {
+  id: string;
+  last_message_at: string | null;
+  last_message_text: string | null;
+  other_user_id: string;
+  other_username: string;
+  other_profile_image: string | null;
+}

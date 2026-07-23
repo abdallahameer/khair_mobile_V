@@ -84,6 +84,11 @@ export default function TabsLayout() {
             <FontAwesome name="telegram" size={size} color={color} />
           ),
         }}
+        listeners={{
+          tabPress: () => {
+            router.replace("/(tabs)/messages");
+          },
+        }}
       />
       <Tabs.Screen
         name="profile"

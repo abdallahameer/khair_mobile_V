@@ -4,7 +4,8 @@ export default function MessagesLayout() {
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="index" />
-      <Stack.Screen name="conversation" />
+      <Stack.Screen name="[conversationId]" />
+      <Stack.Screen name="chat/[otherUserId]" />
     </Stack>
   );
 }

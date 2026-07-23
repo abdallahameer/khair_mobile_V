@@ -111,6 +111,17 @@ export default function OtherProfileScreen() {
             </Text>
           </View>
 
+          <View className="flex flex-row justify-center w-full mb-2">
+            <TouchableOpacity
+              onPress={() => router.replace(`./(tabs)/messages/chat/${id}`)}
+              className="w-[50%]"
+            >
+              <View className="flex items-center justify-center w-full p-3 bg-red-500 rounded-lg text-whi te ">
+                <Text>Messaging</Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+
           <View className="flex-row border-t border-gray-800">
             <TouchableOpacity className="items-center flex-1 py-3 border-b-2">
               <Text className="font-bold text-white capitalize">Videos</Text>
