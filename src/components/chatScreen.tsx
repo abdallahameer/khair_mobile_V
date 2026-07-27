@@ -1,21 +1,24 @@
 import { useAuth } from "@/context/AuthContext";
 import { apiClient, fetcher, WS_BASE_URL } from "@/helpers/api";
 import { Message, MessagesPage } from "@/helpers/videoDB";
-import { useKeyboardHeight } from "@/hooks/useKeyboardHeight";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
   Image,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import Toast from "react-native-toast-message";
 import useSWRInfinite from "swr/infinite";
+import ConfirmationModal from "./confirmationModal";
+import EditMessageModal from "./EditMessageModal";
+import MessageActionsModal from "./MessageActionsModal";
+import TextInputComponent from "./TextInputComponent";
 
 export default function ChatScreen({
   conversationId: initialConversationId,
@@ -31,7 +34,6 @@ export default function ChatScreen({
   const router = useRouter();
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
-  const keyboardHeight = useKeyboardHeight();
 
   const [conversationId, setConversationId] = useState<string | null>(
     initialConversationId,
@@ -39,8 +41,15 @@ export default function ChatScreen({
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [liveMessages, setLiveMessages] = useState<Message[]>([]);
-  const wsRef = useRef<WebSocket | null>(null);
-
+  const [OpenModal, setOpenModal] = useState(false);
+  const [messageId, setMessageId] = useState<string>("");
+  const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set());
+  const [editedMessages, setEditedMessages] = useState<
+    Map<string, { text: string; edited_at: string }>
+  >(new Map());
+  const [actionsOpen, setActionsOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
   useEffect(() => {
     setConversationId(initialConversationId);
   }, [initialConversationId]);
@@ -57,10 +66,8 @@ export default function ChatScreen({
     return `/api/conversations/${conversationId}/messages?limit=20${cursorParams}`;
   };
 
-  const { data, size, setSize, isLoading } = useSWRInfinite<MessagesPage>(
-    getKey,
-    fetcher,
-  );
+  const { data, size, setSize, isLoading, mutate } =
+    useSWRInfinite<MessagesPage>(getKey, fetcher);
 
   const historyMessages = data ? data.flatMap((page) => page.messages) : [];
   const isReachingEnd = data && data[data.length - 1]?.nextCursor === null;
@@ -75,11 +82,32 @@ export default function ChatScreen({
     const map = new Map<string, Message>();
     for (const m of historyMessages) map.set(m.id, m);
     for (const m of liveMessages) map.set(m.id, m);
+
+    for (const id of deletedIds) map.delete(id);
+
+    for (const [id, edit] of editedMessages) {
+      const existing = map.get(id);
+      if (existing)
+        map.set(id, {
+          ...existing,
+          text: edit.text,
+          edited_at: edit.edited_at,
+        });
+    }
+
     return Array.from(map.values()).sort(
       (a, b) =>
         new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
     );
-  }, [historyMessages, liveMessages]);
+  }, [historyMessages, liveMessages, deletedIds, editedMessages]);
+
+  useEffect(() => {
+    if (!conversationId || !user) return;
+
+    apiClient
+      .post(`/api/conversations/${conversationId}/read`, { user_id: user.id })
+      .catch(() => {});
+  }, [conversationId, user]);
 
   useEffect(() => {
     if (!conversationId) return;
@@ -91,15 +119,56 @@ export default function ChatScreen({
       socket = new WebSocket(
         `${WS_BASE_URL}/api/conversations/${conversationId}/ws`,
       );
-      wsRef.current = socket;
 
       socket.onmessage = (e) => {
         try {
-          const message: Message = JSON.parse(e.data);
+          const data = JSON.parse(e.data);
+
+          if (data.type === "message_deleted") {
+            setLiveMessages((prev) => prev.filter((m) => m.id !== data.id));
+            setDeletedIds((prev) => new Set(prev).add(data.id));
+            return;
+          }
+
+          if (data.type === "message_updated") {
+            setLiveMessages((prev) => {
+              const exists = prev.some((m) => m.id === data.id);
+              if (exists) {
+                return prev.map((m) =>
+                  m.id === data.id
+                    ? { ...m, text: data.text, edited_at: data.edited_at }
+                    : m,
+                );
+              }
+              return prev;
+            });
+            setEditedMessages((prev) =>
+              new Map(prev).set(data.id, {
+                text: data.text,
+                edited_at: data.edited_at,
+              }),
+            );
+            return;
+          }
+
+          if (data.type === "conversation_deleted") {
+            router.back();
+            return;
+          }
+
+          const message: Message = data;
           setLiveMessages((prev) => {
             if (prev.some((m) => m.id === message.id)) return prev;
             return [...prev, message];
           });
+
+          if (user && conversationId) {
+            apiClient
+              .post(`/api/conversations/${conversationId}/read`, {
+                user_id: user.id,
+              })
+              .catch(() => {});
+          }
         } catch {}
       };
 
@@ -153,6 +222,47 @@ export default function ChatScreen({
     }
   };
 
+  const editMessageHandler = async (newText: string) => {
+    if (!user || !conversationId || !selectedMessage) return;
+
+    try {
+      const { data: response } = await apiClient.patch(
+        `/api/conversations/${conversationId}/messages/${selectedMessage.id}`,
+        { user_id: user.id, text: newText },
+      );
+
+      setEditedMessages((prev) =>
+        new Map(prev).set(selectedMessage.id, {
+          text: response.text,
+          edited_at: response.edited_at,
+        }),
+      );
+    } catch {
+      Toast.show({
+        type: "error",
+        text1: "Failed to edit message",
+        visibilityTime: 3000,
+      });
+    }
+  };
+
+  const deleteMessageHandler = async () => {
+    if (!user || !conversationId || !selectedMessage) return;
+
+    try {
+      await apiClient.delete(
+        `/api/conversations/${conversationId}/messages/${selectedMessage.id}`,
+        { data: { user_id: user.id } },
+      );
+      setDeletedIds((prev) => new Set(prev).add(selectedMessage.id));
+      Toast.show({
+        type: "success",
+        text1: "message deleted",
+        visibilityTime: 4000,
+      });
+    } catch {}
+  };
+
   return (
     <View className="flex-1 bg-black">
       <View
@@ -192,7 +302,7 @@ export default function ChatScreen({
           inverted
           contentContainerStyle={{ padding: 16, gap: 10 }}
           onEndReached={loadMore}
-          onEndReachedThreshold={0.5}
+          onEndReachedThreshold={0.01}
           ListEmptyComponent={
             <Text className="mt-8 text-center text-gray-500">
               No messages yet — say hello!
@@ -201,42 +311,62 @@ export default function ChatScreen({
           renderItem={({ item }) => {
             const isMine = item.sender_id === user?.id;
             return (
-              <View
-                className={`max-w-[75%] px-4 py-2 rounded-2xl ${
-                  isMine ? "self-end bg-red-600" : "self-start bg-gray-800"
-                }`}
+              <TouchableOpacity
+                onLongPress={() => {
+                  if (isMine) {
+                    setSelectedMessage(item);
+                    setActionsOpen(true);
+                  }
+                }}
               >
-                <Text className="text-white">{item.text}</Text>
-              </View>
+                <View
+                  className={`max-w-[75%] px-4 py-2 rounded-2xl ${
+                    isMine ? "self-end bg-red-600" : "self-start bg-gray-800"
+                  }`}
+                >
+                  <Text className="text-white">{item.text}</Text>
+                  {item.edited_at && (
+                    <Text className="mt-1 text-xs text-white/60">edited</Text>
+                  )}
+                </View>
+              </TouchableOpacity>
             );
           }}
         />
       )}
 
-      <View
-        style={{
-          transform: [{ translateY: -keyboardHeight + insets.bottom }],
-          paddingBottom: keyboardHeight > 0 ? 12 : Math.max(insets.bottom, 12),
-        }}
-        className="flex-row gap-2 px-4 pt-3 bg-red-500 border-t border-gray-800"
-      >
-        <TextInput
-          value={text}
-          onChangeText={setText}
-          placeholder="Message..."
-          placeholderTextColor="#6b7280"
-          className="flex-1 px-4 py-10 text-white bg-gray-800 rounded-full"
-          onSubmitEditing={handleSend}
+      <TextInputComponent
+        text={text}
+        buttonText="send"
+        placeHolder="send a message"
+        setText={setText}
+        loading={sending}
+        onSubmit={handleSend}
+      />
+      <MessageActionsModal
+        open={actionsOpen}
+        setOpen={setActionsOpen}
+        onEdit={() => setEditOpen(true)}
+        onDelete={() => setOpenModal(true)}
+      />
+
+      {selectedMessage && (
+        <EditMessageModal
+          open={editOpen}
+          setOpen={setEditOpen}
+          initialText={selectedMessage.text}
+          onSave={editMessageHandler}
         />
-        <TouchableOpacity
-          onPress={handleSend}
-          disabled={sending || !text.trim()}
-          className="items-center justify-center px-4 py-2 bg-red-600 rounded-full"
-          style={{ opacity: sending || !text.trim() ? 0.5 : 1 }}
-        >
-          <Text className="text-white">Send</Text>
-        </TouchableOpacity>
-      </View>
+      )}
+
+      <ConfirmationModal
+        confirmationText="Delete message"
+        confirmFunc={deleteMessageHandler}
+        open={OpenModal}
+        setOpen={setOpenModal}
+        confirmButtonText="Delete"
+        cancelButtonText="Cancel"
+      />
     </View>
   );
 }

@@ -106,6 +106,7 @@ export interface Message {
   sender_id: string;
   text: string;
   created_at: string;
+  edited_at?: string | null;
 }
 
 export interface MessagesPage {
@@ -120,4 +121,5 @@ export interface ConversationListItem {
   other_user_id: string;
   other_username: string;
   other_profile_image: string | null;
+  has_unread: boolean;
 }

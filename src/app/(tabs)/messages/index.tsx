@@ -1,8 +1,9 @@
+import ConfirmationModal from "@/components/confirmationModal";
 import { useAuth } from "@/context/AuthContext";
-import { fetcher } from "@/helpers/api";
+import { apiClient, fetcher, WS_BASE_URL } from "@/helpers/api";
 import { ConversationListItem } from "@/helpers/videoDB";
 import { useFocusEffect, useRouter } from "expo-router";
-import { useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -11,12 +12,15 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import Toast from "react-native-toast-message";
 import useSWR from "swr";
 
 export default function Messages() {
   const router = useRouter();
   const { user, loadingUser } = useAuth();
-
+  const [selectedConversation, setSelectedConversation] =
+    useState<string>("null");
+  const [openConfermationModal, setOpenConfermationModal] = useState(false);
   const {
     data: conversations,
     isLoading,
@@ -31,6 +35,53 @@ export default function Messages() {
       mutate();
     }, [mutate]),
   );
+
+  useEffect(() => {
+    if (!user) return;
+
+    let socket: WebSocket | null = null;
+    let cancelled = false;
+
+    const connect = () => {
+      socket = new WebSocket(`${WS_BASE_URL}/api/users/${user.id}/inbox-ws`);
+
+      socket.onmessage = (e) => {
+        try {
+          const data = JSON.parse(e.data);
+          if (data.type === "conversations_updated") {
+            mutate();
+          }
+        } catch {}
+      };
+
+      socket.onclose = () => {
+        if (!cancelled) {
+          setTimeout(connect, 2000);
+        }
+      };
+    };
+
+    connect();
+
+    return () => {
+      cancelled = true;
+      socket?.close();
+    };
+  }, [user, mutate]);
+
+  const deleteConversationsHandler = async () => {
+    if (!user || !selectedConversation) return;
+
+    try {
+      await apiClient.delete(`/api/conversations/${selectedConversation}`, {
+        data: { user_id: user.id },
+      });
+      mutate();
+      Toast.show({ type: "success", text1: "conversation Deleted" });
+    } catch {
+      Toast.show({ type: "error", text1: "Failed to delete conversation" });
+    }
+  };
 
   if (loadingUser || isLoading) {
     return (
@@ -62,6 +113,10 @@ export default function Messages() {
         }
         renderItem={({ item }) => (
           <TouchableOpacity
+            onLongPress={() => {
+              setSelectedConversation(item.id);
+              setOpenConfermationModal(true);
+            }}
             onPress={() =>
               router.push({
                 pathname: "/(tabs)/messages/[conversationId]",
@@ -88,15 +143,31 @@ export default function Messages() {
               </View>
             )}
             <View className="flex-1">
-              <Text className="font-semibold text-white">
+              <Text
+                className={`font-semibold ${item.has_unread ? "text-white" : "text-gray-300"}`}
+              >
                 @{item.other_username}
               </Text>
-              <Text className="text-sm text-gray-400" numberOfLines={1}>
+              <Text
+                className={`text-sm ${item.has_unread ? "text-white" : "text-gray-400"}`}
+                numberOfLines={1}
+              >
                 {item.last_message_text ?? ""}
               </Text>
             </View>
+            {!!item.has_unread && (
+              <View className="w-3 h-3 bg-red-600 rounded-full" />
+            )}
           </TouchableOpacity>
         )}
+      />
+      <ConfirmationModal
+        confirmButtonText="Delete this conversation"
+        cancelButtonText="Cancel"
+        confirmationText="Delete Conversation"
+        confirmFunc={deleteConversationsHandler}
+        open={openConfermationModal}
+        setOpen={setOpenConfermationModal}
       />
     </View>
   );
