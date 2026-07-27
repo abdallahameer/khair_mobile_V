@@ -2,7 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 
 const API_BASE_URL = "https://my-worker.mohammad-3db.workers.dev";
-
+export const WS_BASE_URL = API_BASE_URL.replace(/^http/, "ws");
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
   timeout: 1000 * 60 * 10,
