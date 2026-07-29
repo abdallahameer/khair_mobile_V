@@ -14,6 +14,10 @@ export default function RootLayout() {
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="login" options={{ presentation: "modal" }} />
           <Stack.Screen name="register" options={{ presentation: "modal" }} />
+          <Stack.Screen
+            name="forgot-password"
+            options={{ presentation: "modal" }}
+          />
           <Stack.Screen name="[id]" options={{ presentation: "modal" }} />
         </Stack>
         <Toast config={toastConfig} />
