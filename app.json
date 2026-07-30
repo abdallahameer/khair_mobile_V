@@ -16,7 +16,21 @@
         "backgroundColor": "#000000"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.abdalah_ameer.khairmobilev"
+      "package": "com.abdalah_ameer.khairmobilev",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "khair.live",
+              "pathPrefix": "/singleVideo"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
     },
     "web": {
       "output": "static",
