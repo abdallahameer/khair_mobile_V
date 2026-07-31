@@ -148,7 +148,7 @@ export default function FeedItem({
         <TouchableOpacity
           onPress={async () => {
             await Clipboard.setStringAsync(
-              `https://khair.live/video/${item.id}`,
+              `https://khair.live/singleVideo/${item.id}`,
             );
             Toast.show({
               type: "success",
