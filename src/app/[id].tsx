@@ -1,5 +1,4 @@
 import GridItem from "@/components/GridItems";
-import VideoModal from "@/components/VideoModal";
 import { useAuth } from "@/context/AuthContext";
 import { fetcher } from "@/helpers/api";
 import { UserProfileType, VideosPage } from "@/helpers/videoDB";
@@ -142,7 +141,7 @@ export default function OtherProfileScreen() {
             renderItem={({ item }) => (
               <GridItem
                 video={item}
-                onPress={() => setSelectedVideoId(item.id.toString())}
+                onPress={() => router.push(`/singleVideo/${item.id}`)}
               />
             )}
             ListFooterComponent={
@@ -156,12 +155,12 @@ export default function OtherProfileScreen() {
           />
         )}
 
-        {selectedVideoId && (
+        {/* {selectedVideoId && (
           <VideoModal
             videoId={selectedVideoId}
             onClose={() => setSelectedVideoId(null)}
           />
-        )}
+        )} */}
       </View>
     );
   }

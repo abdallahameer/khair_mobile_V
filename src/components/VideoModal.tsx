@@ -1,12 +1,18 @@
-import { apiClient, fetcher } from "@/helpers/api";
-import { FontAwesome, Ionicons } from "@expo/vector-icons";
+import { fetcher } from "@/helpers/api";
+import { Feather, FontAwesome, Ionicons } from "@expo/vector-icons";
+import * as Clipboard from "expo-clipboard";
 import { VideoView, useVideoPlayer } from "expo-video";
 import { useEffect, useState } from "react";
 
+import { useAuth } from "@/context/AuthContext";
+import { toggleLikeVideo, toggleSaveVideo } from "@/helpers/functions";
+import { Video } from "@/helpers/videoDB";
 import { usePost } from "@/hooks/Requests";
+import { useRouter } from "expo-router";
 import {
-  ActivityIndicator,
-  Modal,
+  Dimensions,
+  Image,
+  Pressable,
   Text,
   TouchableOpacity,
   View,
@@ -14,6 +20,8 @@ import {
 import Toast from "react-native-toast-message";
 import useSWR from "swr";
 import CommentsPanel from "./commentsPanel";
+
+const { height: itemHeight } = Dimensions.get("window");
 export default function VideoModal({
   videoId,
   currentUserId,
@@ -25,7 +33,9 @@ export default function VideoModal({
 }) {
   const [openComments, setOpenComments] = useState(false);
   const { post } = usePost();
-  const { data: video, mutate } = useSWR(
+  const { user } = useAuth();
+  const router = useRouter();
+  const { data: video, mutate } = useSWR<Video>(
     videoId
       ? `/api/videos/${videoId}${currentUserId ? `?viewer_id=${currentUserId}` : ""}`
       : null,
@@ -44,137 +54,124 @@ export default function VideoModal({
   }, [video?.video_url]);
 
   const handleLike = async () => {
-    if (!currentUserId) {
-      Toast.show({
-        type: "info",
-        text1: "Login required",
-        text2: "You need to login first",
-        visibilityTime: 3000,
-      });
-      return;
+    if (video) {
+      await toggleLikeVideo(video, user, mutate, post);
     }
-    try {
-      if (video?.is_liked) {
-        await apiClient.delete(`/api/videos/${videoId}/like`, {
-          data: { user_id: currentUserId },
-        });
-      } else {
-        await post(`/api/videos/${videoId}/like`, {
-          user_id: currentUserId,
-        });
-      }
-      mutate();
-    } catch {}
   };
 
   const handleSave = async () => {
-    if (!currentUserId) {
-      Toast.show({
-        type: "info",
-        text1: "Login required",
-        text2: "You need to login first",
-        visibilityTime: 3000,
-      });
-      return;
+    if (video) {
+      await toggleSaveVideo(video, user, mutate, post);
     }
-    try {
-      if (video?.is_saved) {
-        await apiClient.delete(`/api/videos/${videoId}/save`, {
-          data: { user_id: currentUserId },
-        });
-      } else {
-        await post(`/api/videos/${videoId}/save`, {
-          user_id: currentUserId,
-        });
-      }
-      mutate();
-    } catch {}
   };
 
+  const onComment = () => setOpenComments(true);
+
   return (
-    <Modal visible animationType="slide" onRequestClose={onClose}>
-      <View className="flex-1 bg-black">
-        {!video ? (
-          <View className="items-center justify-center flex-1">
-            <ActivityIndicator color="#dc2626" size="large" />
-          </View>
-        ) : (
-          <>
-            <VideoView
-              player={player}
-              style={{ width: "100%", height: "100%" }}
-              contentFit="contain"
-              nativeControls={false}
-            />
+    <View className="flex-1">
+      <View
+        style={{ height: itemHeight }}
+        className="flex items-end justify-center bg-black "
+      >
+        <TouchableOpacity
+          onPress={() => router.back()}
+          className="absolute z-50 p-2 rounded-full top-12 right-4 bg-black/40"
+        >
+          <Ionicons name="close" size={28} color="#ffffff" />
+        </TouchableOpacity>
+        <Pressable
+          onPress={() => {
+            if (player.playing) {
+              player.pause();
+            } else {
+              player.play();
+            }
+          }}
+          style={{ width: "100%", height: itemHeight }}
+        >
+          <VideoView
+            player={player}
+            style={{ width: "100%", height: "100%" }}
+            contentFit="contain"
+            nativeControls={false}
+          />
+        </Pressable>
 
-            <TouchableOpacity
-              onPress={onClose}
-              className="absolute p-2 rounded-full top-12 right-4 bg-black/40"
-            >
-              <Ionicons name="close" size={28} color="#ffffff" />
-            </TouchableOpacity>
+        <TouchableOpacity className="absolute flex-row items-center gap-2 bottom-32 right-4">
+          <Text
+            className="text-lg font-bold text-white"
+            style={{ textShadowColor: "#000", textShadowRadius: 4 }}
+          >
+            @{video?.username}
+          </Text>
+        </TouchableOpacity>
 
-            <TouchableOpacity
-              onPress={() => {
-                onClose();
-              }}
-              className="absolute flex-row items-center gap-2 bottom-24 right-4"
-            >
-              <Text
-                className="text-lg font-bold text-white"
-                style={{ textShadowColor: "#000", textShadowRadius: 4 }}
-              >
-                @{video.username}
-              </Text>
-            </TouchableOpacity>
-
-            <View className="absolute items-center gap-5 bottom-36 left-3">
-              <TouchableOpacity
-                onPress={handleLike}
-                className="items-center gap-1"
-              >
-                <Ionicons
-                  name={video.is_liked ? "heart" : "heart-outline"}
-                  size={28}
-                  color={video.is_liked ? "#ef4444" : "#ffffff"}
-                />
-                <Text className="text-xs text-white">{video.likes_count}</Text>
-              </TouchableOpacity>
-
-              <View className="items-center gap-1">
-                <Ionicons name="eye-outline" size={26} color="#ffffff" />
-                <Text className="text-xs text-white">{video.views_count}</Text>
-              </View>
-
-              <TouchableOpacity
-                onPress={() => setOpenComments(true)}
-                className="items-center gap-1"
-              >
-                <FontAwesome name="comment" size={26} color="#ffffff" />
-                <Text className="text-xs text-white">
-                  {video.comments_count}
+        <View className="absolute items-center gap-5 bottom-36 left-3">
+          <View>
+            {video?.profile_image ? (
+              <Image
+                source={{ uri: video?.profile_image }}
+                className="w-10 h-10 border-2 border-gray-700 rounded-full"
+              />
+            ) : (
+              <View className="items-center justify-center w-10 h-10 bg-gray-800 border-2 border-gray-700 rounded-full">
+                <Text className="text-sm font-bold text-white">
+                  {video?.username[0].toUpperCase()}
                 </Text>
-              </TouchableOpacity>
+              </View>
+            )}
+          </View>
+          <TouchableOpacity onPress={handleLike} className="items-center gap-1">
+            <FontAwesome
+              name={video?.is_liked ? "heart" : "heart-o"}
+              size={28}
+              color={video?.is_liked ? "#ef4444" : "#ffffff"}
+            />
+            <Text className="text-xs text-white">{video?.likes_count}</Text>
+          </TouchableOpacity>
 
-              <TouchableOpacity
-                onPress={handleSave}
-                className="items-center gap-1"
-              >
-                <Ionicons
-                  name={video.is_saved ? "bookmark" : "bookmark-outline"}
-                  size={26}
-                  color={video.is_saved ? "#facc15" : "#ffffff"}
-                />
-              </TouchableOpacity>
-            </View>
-          </>
-        )}
+          <View className="items-center gap-1">
+            <Feather name="eye" size={26} color="#ffffff" />
+            <Text className="text-xs text-white">{video?.views_count}</Text>
+          </View>
+
+          <TouchableOpacity onPress={onComment} className="items-center gap-1">
+            <FontAwesome name="comment" size={26} color="#ffffff" />
+            <Text className="text-xs text-white">{video?.comments_count}</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity onPress={handleSave} className="items-center gap-1">
+            <FontAwesome
+              name={video?.is_saved ? "bookmark" : "bookmark-o"}
+              size={26}
+              color={video?.is_saved ? "#facc15" : "#ffffff"}
+            />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={async () => {
+              await Clipboard.setStringAsync(
+                `https://khair.live/singleVideo/${video?.id}`,
+              );
+              Toast.show({
+                type: "success",
+                text1: "Copied to clipboard",
+                text2: "Video link has been copied.",
+              });
+            }}
+            className="items-center gap-1"
+          >
+            <Ionicons name="link" size={26} color="#ffffff" />
+            <Text className="text-xs text-white">Share</Text>
+          </TouchableOpacity>
+        </View>
       </View>
       <CommentsPanel
         visible={openComments}
         videoId={videoId}
+        withTapbar={false}
         onClose={() => setOpenComments(false)}
       />
-    </Modal>
+    </View>
   );
 }
