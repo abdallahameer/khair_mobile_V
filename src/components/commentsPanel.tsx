@@ -28,10 +28,12 @@ interface Comment {
 export default function CommentsPanel({
   videoId,
   visible,
+  withTapbar = true,
   onClose,
 }: {
   videoId: string;
   visible: boolean;
+  withTapbar?: boolean;
   onClose: () => void;
 }) {
   const [text, setText] = useState("");
@@ -103,6 +105,8 @@ export default function CommentsPanel({
 
   if (!visible) return null;
 
+  const tabBarHeight = !withTapbar ? 100 : 0;
+
   return (
     <>
       <TouchableOpacity
@@ -168,7 +172,7 @@ export default function CommentsPanel({
           style={{
             paddingBottom:
               isKeyboardVisible > 0
-                ? isKeyboardVisible - Math.max(bottomInset, 16)
+                ? isKeyboardVisible - Math.max(bottomInset, 16) + tabBarHeight
                 : Math.max(bottomInset, 16),
           }}
         >

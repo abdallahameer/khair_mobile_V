@@ -1,5 +1,4 @@
 import GridItem from "@/components/GridItems";
-import VideoModal from "@/components/VideoModal";
 import { useAuth } from "@/context/AuthContext";
 import { fetcher } from "@/helpers/api";
 import { UserProfileType, VideosPage } from "@/helpers/videoDB";
@@ -305,7 +304,9 @@ export default function OwnProfileScreen() {
           renderItem={({ item }) => (
             <GridItem
               video={item}
-              onPress={() => setSelectedVideoId(item.id.toString())}
+              onPress={() => {
+                router.push(`/singleVideo/${item.id}`);
+              }}
             />
           )}
           ListFooterComponent={
@@ -316,14 +317,6 @@ export default function OwnProfileScreen() {
               />
             ) : null
           }
-        />
-      )}
-
-      {selectedVideoId && currentUserId && (
-        <VideoModal
-          videoId={selectedVideoId}
-          currentUserId={currentUserId}
-          onClose={() => setSelectedVideoId(null)}
         />
       )}
     </View>

@@ -1,10 +1,10 @@
 import VideoFeed from "@/components/VideoFeed";
 import { useAuth } from "@/context/AuthContext";
-import { apiClient, fetcher } from "@/helpers/api";
+import { fetcher } from "@/helpers/api";
+import { toggleLikeVideo, toggleSaveVideo } from "@/helpers/functions";
 import { Video, VideosPage } from "@/helpers/videoDB";
 import { usePost } from "@/hooks/Requests";
 import { ActivityIndicator, Text, View } from "react-native";
-import Toast from "react-native-toast-message";
 import useSWRInfinite from "swr/infinite";
 
 export default function Home() {
@@ -44,83 +44,12 @@ export default function Home() {
     }
   };
 
-  const updateSingleVideo = (videoId: string, updater: (v: Video) => Video) => {
-    updateVideoInfo((currentData: VideosPage[] | undefined) => {
-      return currentData?.map((page) => ({
-        ...page,
-        videos: page.videos.map((v) => (v.id === videoId ? updater(v) : v)),
-      }));
-    }, false);
-  };
-
   const handleLike = async (item: Video) => {
-    if (!user) {
-      Toast.show({
-        type: "info",
-        text1: "Login required",
-        text2: "You need to login first",
-        visibilityTime: 3000,
-      });
-      return;
-    }
-
-    const wasLiked = item.is_liked;
-
-    updateSingleVideo(item.id.toString(), (v) => ({
-      ...v,
-      is_liked: wasLiked ? 0 : 1,
-      likes_count: wasLiked ? v.likes_count - 1 : v.likes_count + 1,
-    }));
-
-    try {
-      if (wasLiked) {
-        await apiClient.delete(`/api/videos/${item.id}/like`, {
-          data: { user_id: user.id },
-        });
-      } else {
-        await post(`/api/videos/${item.id}/like`, { user_id: user.id });
-      }
-    } catch {
-      updateSingleVideo(item.id.toString(), (v) => ({
-        ...v,
-        is_liked: wasLiked,
-        likes_count: wasLiked ? v.likes_count + 1 : v.likes_count - 1,
-      }));
-    }
+    await toggleLikeVideo(item, user, updateVideoInfo, post);
   };
 
   const handleSave = async (item: Video) => {
-    if (!user) {
-      Toast.show({
-        type: "info",
-        text1: "Login required",
-        text2: "You need to login first",
-        visibilityTime: 3000,
-      });
-      return;
-    }
-
-    const wasSaved = item.is_saved;
-
-    updateSingleVideo(item.id.toString(), (v) => ({
-      ...v,
-      is_saved: wasSaved ? 0 : 1,
-    }));
-
-    try {
-      if (wasSaved) {
-        await apiClient.delete(`/api/videos/${item.id}/save`, {
-          data: { user_id: user.id },
-        });
-      } else {
-        await post(`/api/videos/${item.id}/save`, { user_id: user.id });
-      }
-    } catch {
-      updateSingleVideo(item.id.toString(), (v) => ({
-        ...v,
-        is_saved: wasSaved,
-      }));
-    }
+    await toggleSaveVideo(item, user, updateVideoInfo, post);
   };
 
   if ((isLoading || loadingUser) && videos.length === 0) {
