@@ -1,6 +1,6 @@
 import GridItem from "@/components/GridItems";
 import { useAuth } from "@/context/AuthContext";
-import { fetcher } from "@/helpers/api";
+import { apiClient, fetcher } from "@/helpers/api";
 import { UserProfileType, VideosPage } from "@/helpers/videoDB";
 import Feather from "@expo/vector-icons/Feather";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -14,6 +14,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import Toast from "react-native-toast-message";
 import useSWR from "swr";
 import useSWRInfinite from "swr/infinite";
 
@@ -68,6 +69,21 @@ export default function OtherProfileScreen() {
     }
   };
 
+  const followingHandler = () => {
+    if (!user) {
+      Toast.show({
+        type: "info",
+        text1: "Login required",
+        text2: "You need to login first",
+        visibilityTime: 3000,
+      });
+    }
+
+    try {
+      apiClient.post(`/api/users/${id}/following`);
+    } catch {}
+  };
+
   if (isLoading) {
     return (
       <View className="items-center justify-center flex-1 bg-black">
@@ -110,13 +126,18 @@ export default function OtherProfileScreen() {
             </Text>
           </View>
 
-          <View className="flex flex-row justify-center w-full mb-2">
+          <View className="flex flex-row items-center justify-center w-full gap-2 mb-2">
             <TouchableOpacity
               onPress={() => router.replace(`./(tabs)/messages/chat/${id}`)}
-              className="w-[50%]"
+              className="w-[30%]"
             >
+              <View className="flex items-center justify-center w-full p-3 bg-gray-500 rounded-lg text-whi te ">
+                <Text>say hello 👋</Text>
+              </View>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={followingHandler} className="w-[30%]">
               <View className="flex items-center justify-center w-full p-3 bg-red-500 rounded-lg text-whi te ">
-                <Text>Messaging</Text>
+                <Text>follwing</Text>
               </View>
             </TouchableOpacity>
           </View>
