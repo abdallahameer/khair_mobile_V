@@ -20,6 +20,10 @@ export interface UserProfileType {
     username: string;
     created_at: string;
     profile_image: string | null;
+    likes_count: number;
+    followers_count: number;
+    following_count: number;
+    is_following: boolean;
   };
   videos: {
     id: string;

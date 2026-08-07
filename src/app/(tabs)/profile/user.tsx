@@ -3,6 +3,7 @@ import { useAuth } from "@/context/AuthContext";
 import { fetcher } from "@/helpers/api";
 import { UserProfileType, VideosPage } from "@/helpers/videoDB";
 import { usePost } from "@/hooks/Requests";
+import { Feather } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import { useState } from "react";
@@ -10,6 +11,7 @@ import {
   ActivityIndicator,
   FlatList,
   Image,
+  Pressable,
   Text,
   TouchableOpacity,
   View,
@@ -233,10 +235,15 @@ export default function OwnProfileScreen() {
     <View className="flex-1 bg-black">
       <View>
         <View className="items-center pt-10 pb-4">
+          <Pressable onPress={() => router.replace("/(tabs)")}>
+            <View className="flex-row items-center justify-end w-full px-4 py-3">
+              <Feather name="arrow-right" size={24} color="white" />
+            </View>
+          </Pressable>
           <View className="relative">
             {profileData?.user?.profile_image ? (
               <Image
-                source={{ uri: profileData.user.profile_image }}
+                source={{ uri: profileData?.user.profile_image }}
                 className="w-24 h-24 border-2 border-gray-700 rounded-full"
               />
             ) : (
@@ -246,25 +253,44 @@ export default function OwnProfileScreen() {
                 </Text>
               </View>
             )}
-
-            <TouchableOpacity
-              onPress={handleImageUpload}
-              disabled={uploadingImage}
-              className="absolute bottom-0 right-0 items-center justify-center bg-red-600 rounded-full w-7 h-7"
-              style={{ opacity: uploadingImage ? 0.5 : 1 }}
-            >
-              <Text className="text-lg leading-none text-white">+</Text>
-            </TouchableOpacity>
           </View>
-
-          <Text className="mt-3 text-2xl font-bold text-white">
-            @{profileData?.user?.username}
-          </Text>
-          <Text className="mt-1 text-sm text-gray-400">
-            Joined{" "}
-            {new Date(profileData?.user?.created_at).toLocaleDateString()}
-          </Text>
-
+          <View className="flex-row justify-center w-full">
+            <Text className="mt-3 text-2xl font-bold text-white">
+              @{profileData?.user?.username}
+            </Text>
+          </View>
+          <View className="flex-row justify-center w-full gap-2">
+            <View className="flex-col items-center gap-1">
+              <Text className="text-xl font-bold text-white">
+                {profileData.user?.likes_count}
+              </Text>
+              <Text className="text-white">likes</Text>
+            </View>
+            <View className="flex-row items-center h-full">
+              <Text className="text-white">|</Text>
+            </View>
+            <View className="flex-col items-center gap-1">
+              <Text className="text-xl font-bold text-white">
+                {profileData.user?.followers_count}
+              </Text>
+              <Text className="text-white">Followers</Text>
+            </View>
+            <View className="flex-row items-center h-full">
+              <Text className="text-white">|</Text>
+            </View>
+            <View className="flex-col items-center gap-1">
+              <Text className="text-xl font-bold text-white">
+                {profileData.user?.following_count}
+              </Text>
+              <Text className="text-white">following</Text>
+            </View>
+          </View>
+          <View className="flex-row justify-center w-full">
+            <Text className="mt-1 text-sm text-gray-400">
+              Joined{" "}
+              {new Date(profileData?.user?.created_at).toLocaleDateString()}
+            </Text>
+          </View>
           <TouchableOpacity onPress={handleLogout} className="mt-3">
             <Text className="text-sm text-gray-500">Logout</Text>
           </TouchableOpacity>
