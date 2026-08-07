@@ -1,6 +1,6 @@
 import GridItem from "@/components/GridItems";
 import { useAuth } from "@/context/AuthContext";
-import { fetcher } from "@/helpers/api";
+import { apiClient, fetcher } from "@/helpers/api";
 import { UserProfileType, VideosPage } from "@/helpers/videoDB";
 import Feather from "@expo/vector-icons/Feather";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -14,6 +14,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import Toast from "react-native-toast-message";
 import useSWR from "swr";
 import useSWRInfinite from "swr/infinite";
 
@@ -23,8 +24,12 @@ export default function OtherProfileScreen() {
   const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
   const { user, loadingUser } = useAuth();
 
-  const { data: profileData, isLoading } = useSWR<UserProfileType>(
-    id ? `/api/users/${id}` : null,
+  const {
+    data: profileData,
+    isLoading,
+    mutate,
+  } = useSWR<UserProfileType>(
+    id ? `/api/users/${id}${user ? `?viewer_id=${user.id}` : ""}` : null,
     fetcher,
   );
 
@@ -68,6 +73,39 @@ export default function OtherProfileScreen() {
     }
   };
 
+  const followingHandler = async () => {
+    if (!user) {
+      Toast.show({
+        type: "info",
+        text1: "Login required",
+        text2: "You need to login first",
+        visibilityTime: 3000,
+      });
+      return;
+    }
+    if (!id || !profileData) return;
+
+    const wasFollowing = profileData.user.is_following;
+    try {
+      if (wasFollowing) {
+        await apiClient.delete(`/api/users/${id}/follow`, {
+          data: { follower_id: user.id },
+        });
+      } else {
+        await apiClient.post(`/api/users/${id}/follow`, {
+          follower_id: user.id,
+        });
+      }
+      mutate();
+    } catch {
+      Toast.show({
+        type: "error",
+        text1: "Something went wrong",
+        visibilityTime: 3000,
+      });
+    }
+  };
+
   if (isLoading) {
     return (
       <View className="items-center justify-center flex-1 bg-black">
@@ -100,23 +138,59 @@ export default function OtherProfileScreen() {
                 </View>
               )}
             </View>
-
-            <Text className="mt-3 text-2xl font-bold text-white">
-              @{profileData?.user?.username}
-            </Text>
-            <Text className="mt-1 text-sm text-gray-400">
-              Joined{" "}
-              {new Date(profileData?.user?.created_at).toLocaleDateString()}
-            </Text>
+            <View className="flex-row justify-center w-full">
+              <Text className="mt-3 text-2xl font-bold text-white">
+                @{profileData?.user?.username}
+              </Text>
+            </View>
+            <View className="flex-row justify-center w-full gap-2">
+              <View className="flex-col items-center gap-1">
+                <Text className="text-xl font-bold text-white">
+                  {profileData.user?.likes_count}
+                </Text>
+                <Text className="text-white">likes</Text>
+              </View>
+              <View className="flex-row items-center h-full">
+                <Text className="text-white">|</Text>
+              </View>
+              <View className="flex-col items-center gap-1">
+                <Text className="text-xl font-bold text-white">
+                  {profileData.user?.followers_count}
+                </Text>
+                <Text className="text-white">Followers</Text>
+              </View>
+              <View className="flex-row items-center h-full">
+                <Text className="text-white">|</Text>
+              </View>
+              <View className="flex-col items-center gap-1">
+                <Text className="text-xl font-bold text-white">
+                  {profileData.user?.following_count}
+                </Text>
+                <Text className="text-white">following</Text>
+              </View>
+            </View>
+            <View className="flex-row justify-center w-full">
+              <Text className="mt-1 text-sm text-gray-400">
+                Joined{" "}
+                {new Date(profileData?.user?.created_at).toLocaleDateString()}
+              </Text>
+            </View>
           </View>
 
-          <View className="flex flex-row justify-center w-full mb-2">
+          <View className="flex flex-row items-center justify-center w-full gap-2 mb-2">
             <TouchableOpacity
               onPress={() => router.replace(`./(tabs)/messages/chat/${id}`)}
-              className="w-[50%]"
+              className="w-[30%]"
             >
-              <View className="flex items-center justify-center w-full p-3 bg-red-500 rounded-lg text-whi te ">
-                <Text>Messaging</Text>
+              <View className="flex items-center justify-center w-full p-3 bg-gray-500 rounded-lg text-whi te ">
+                <Text>say hello 👋</Text>
+              </View>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={followingHandler} className="w-[30%]">
+              <View className="flex items-center justify-center w-full p-3 bg-red-500 rounded-lg">
+                <Text>
+                  {profileData.user.is_following ? "unfollow" : "follow"}
+                </Text>
               </View>
             </TouchableOpacity>
           </View>
