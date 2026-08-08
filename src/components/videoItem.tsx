@@ -3,9 +3,12 @@ import { Feather, FontAwesome, Ionicons } from "@expo/vector-icons";
 import * as Clipboard from "expo-clipboard";
 import { useRouter } from "expo-router";
 import { useVideoPlayer, VideoView } from "expo-video";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Image, Pressable, Text, TouchableOpacity, View } from "react-native";
 import Toast from "react-native-toast-message";
+
+const DESCRIPTION_PREVIEW_LENGTH = 30;
+
 export default function FeedItem({
   item,
   isActive,
@@ -30,7 +33,15 @@ export default function FeedItem({
     p.loop = true;
   });
 
+  const [showFullDescription, setShowFullDescription] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const description = item.description ?? "";
+  const isTruncatable = description.length > DESCRIPTION_PREVIEW_LENGTH;
+  const displayedDescription =
+    isTruncatable && !showFullDescription
+      ? `${description.slice(0, DESCRIPTION_PREVIEW_LENGTH)}...`
+      : description;
 
   useEffect(() => {
     if (isActive) {
@@ -90,18 +101,35 @@ export default function FeedItem({
           nativeControls={false}
         />
       </Pressable>
-
-      <TouchableOpacity
-        onPress={goToProfile}
-        className="absolute flex-row items-center gap-2 bottom-32 right-4"
+      <View
+        className="absolute flex-col items-end gap-2 bottom-32 right-4"
+        style={{ maxWidth: 240 }}
       >
-        <Text
-          className="text-lg font-bold text-white"
-          style={{ textShadowColor: "#000", textShadowRadius: 4 }}
-        >
-          @{item.username}
-        </Text>
-      </TouchableOpacity>
+        <TouchableOpacity onPress={goToProfile}>
+          <Text
+            className="text-lg font-bold text-white"
+            style={{ textShadowColor: "#000", textShadowRadius: 4 }}
+          >
+            @{item.username}
+          </Text>
+        </TouchableOpacity>
+        <Text className="text-white">{item?.category}</Text>
+        {description.length > 0 && (
+          <TouchableOpacity
+            onPress={() =>
+              isTruncatable && setShowFullDescription((prev) => !prev)
+            }
+            activeOpacity={isTruncatable ? 0.7 : 1}
+          >
+            <Text
+              className="text-white"
+              style={{ textShadowColor: "#000", textShadowRadius: 4 }}
+            >
+              {displayedDescription}
+            </Text>
+          </TouchableOpacity>
+        )}
+      </View>
 
       <View className="absolute items-center gap-5 bottom-36 left-3">
         <TouchableOpacity onPress={goToProfile}>
