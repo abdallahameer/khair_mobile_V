@@ -22,6 +22,7 @@ import useSWR from "swr";
 import CommentsPanel from "./commentsPanel";
 
 const { height: itemHeight } = Dimensions.get("window");
+const DESCRIPTION_PREVIEW_LENGTH = 30;
 export default function VideoModal({
   videoId,
   currentUserId,
@@ -32,6 +33,7 @@ export default function VideoModal({
   onClose: () => void;
 }) {
   const [openComments, setOpenComments] = useState(false);
+  const [showFullDescription, setShowFullDescription] = useState(false);
   const { post } = usePost();
   const { user } = useAuth();
   const router = useRouter();
@@ -41,6 +43,13 @@ export default function VideoModal({
       : null,
     fetcher,
   );
+
+  const description = video?.description ?? "";
+  const isTruncatable = description.length > DESCRIPTION_PREVIEW_LENGTH;
+  const displayedDescription =
+    isTruncatable && !showFullDescription
+      ? `${description.slice(0, DESCRIPTION_PREVIEW_LENGTH)}...`
+      : description;
 
   const player = useVideoPlayer(video?.video_url ?? "", (p) => {
     p.loop = true;
@@ -62,6 +71,14 @@ export default function VideoModal({
   const handleSave = async () => {
     if (video) {
       await toggleSaveVideo(video, user, mutate, post);
+    }
+  };
+
+  const goToProfile = () => {
+    if (video?.user_id === user?.id) {
+      router.replace(`/(tabs)/profile/user`);
+    } else {
+      router.replace(`/${video?.user_id}`);
     }
   };
 
@@ -97,14 +114,35 @@ export default function VideoModal({
           />
         </Pressable>
 
-        <TouchableOpacity className="absolute flex-row items-center gap-2 bottom-32 right-4">
-          <Text
-            className="text-lg font-bold text-white"
-            style={{ textShadowColor: "#000", textShadowRadius: 4 }}
-          >
-            @{video?.username}
-          </Text>
-        </TouchableOpacity>
+        <View
+          className="absolute flex-col items-end gap-2 bottom-32 right-4"
+          style={{ maxWidth: 240 }}
+        >
+          <TouchableOpacity onPress={goToProfile}>
+            <Text
+              className="text-lg font-bold text-white"
+              style={{ textShadowColor: "#000", textShadowRadius: 4 }}
+            >
+              @{video?.username}
+            </Text>
+          </TouchableOpacity>
+          <Text className="text-white">{video?.category}</Text>
+          {description.length > 0 && (
+            <TouchableOpacity
+              onPress={() =>
+                isTruncatable && setShowFullDescription((prev) => !prev)
+              }
+              activeOpacity={isTruncatable ? 0.7 : 1}
+            >
+              <Text
+                className="text-white"
+                style={{ textShadowColor: "#000", textShadowRadius: 4 }}
+              >
+                {displayedDescription}
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
 
         <View className="absolute items-center gap-5 bottom-36 left-3">
           <View>

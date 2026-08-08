@@ -5,6 +5,8 @@ export interface Video {
   username: string;
   user_id: string;
   uploaded_at: string;
+  description: string;
+  category: string;
   likes_count: number;
   comments_count: number;
   views_count: number;
