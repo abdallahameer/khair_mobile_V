@@ -1,11 +1,10 @@
+import ShareModal from "@/components/Sharemodal ";
 import { Video } from "@/helpers/videoDB";
 import { Feather, FontAwesome, Ionicons } from "@expo/vector-icons";
-import * as Clipboard from "expo-clipboard";
 import { useRouter } from "expo-router";
 import { useVideoPlayer, VideoView } from "expo-video";
 import { useEffect, useRef, useState } from "react";
 import { Image, Pressable, Text, TouchableOpacity, View } from "react-native";
-import Toast from "react-native-toast-message";
 
 const DESCRIPTION_PREVIEW_LENGTH = 30;
 
@@ -34,6 +33,7 @@ export default function FeedItem({
   });
 
   const [showFullDescription, setShowFullDescription] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const description = item.description ?? "";
@@ -82,7 +82,7 @@ export default function FeedItem({
   return (
     <View
       style={{ height: itemHeight }}
-      className="flex items-end justify-center bg-black "
+      className="flex items-end justify-center h-full bg-black"
     >
       <Pressable
         onPress={() => {
@@ -113,7 +113,6 @@ export default function FeedItem({
             @{item.username}
           </Text>
         </TouchableOpacity>
-        <Text className="text-white">{item?.category}</Text>
         {description.length > 0 && (
           <TouchableOpacity
             onPress={() =>
@@ -174,22 +173,22 @@ export default function FeedItem({
         </TouchableOpacity>
 
         <TouchableOpacity
-          onPress={async () => {
-            await Clipboard.setStringAsync(
-              `https://khair.live/singleVideo/${item.id}`,
-            );
-            Toast.show({
-              type: "success",
-              text1: "Copied to clipboard",
-              text2: "Video link has been copied.",
-            });
-          }}
+          onPress={() => setShowShareModal(true)}
           className="items-center gap-1"
         >
           <Ionicons name="link" size={26} color="#ffffff" />
           <Text className="text-xs text-white">Share</Text>
         </TouchableOpacity>
       </View>
+
+      <ShareModal
+        visible={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        videoId={String(item.id)}
+        userId={userId}
+        videoUrl={item.video_url}
+        withTapbar={false}
+      />
     </View>
   );
 }

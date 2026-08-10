@@ -6,7 +6,7 @@ import { Dimensions, FlatList, View, ViewToken } from "react-native";
 import CommentsPanel from "./commentsPanel";
 import FeedItem from "./videoItem";
 
-const { height: SCREEN_HEIGHT } = Dimensions.get("window");
+const { height: SCREEN_HEIGHT } = Dimensions.get("screen");
 
 interface User {
   id: string;
