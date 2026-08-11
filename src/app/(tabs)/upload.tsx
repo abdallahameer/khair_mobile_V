@@ -120,18 +120,6 @@ export default function Upload() {
   const handleGallery = async () => {
     if (!user) return;
 
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== "granted") {
-      Toast.show({
-        type: "warning",
-        text1: "Permission required",
-        text2: "Please allow access to your media library to upload videos.",
-        visibilityTime: 3000,
-      });
-      return;
-    }
-
-    // Single selection only — each video needs its own description/category
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: "videos",
       allowsMultipleSelection: false,

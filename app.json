@@ -50,7 +50,8 @@
         "expo-media-library",
         {
           "photosPermission": "Allow Khair to save videos to your library.",
-          "savePhotosPermission": "Allow Khair to save videos to your library."
+          "savePhotosPermission": "Allow Khair to save videos to your library.",
+          "granularPermissions": []
         }
       ],
       "expo-video"

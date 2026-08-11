@@ -24,7 +24,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 import useSWR from "swr";
 
-type SheetView = "menu" | "sendTo" | "report";
+type SheetView = "menu" | "report";
 
 export default function ShareModal({
   visible,
@@ -53,7 +53,7 @@ export default function ShareModal({
 
   const { data: conversations, isLoading: isLoadingConversations } = useSWR<
     ConversationListItem[]
-  >(userId ? `/api/conversations?user_id=${userId}` : null, fetcher);
+  >(visible && userId ? `/api/conversations?user_id=${userId}` : null, fetcher);
 
   const close = () => {
     setView("menu");
@@ -74,7 +74,7 @@ export default function ShareModal({
   const handleDownload = async () => {
     if (downloading) return;
 
-    const { status } = await MediaLibrary.requestPermissionsAsync();
+    const { status } = await MediaLibrary.requestPermissionsAsync(true);
     if (status !== "granted") {
       Toast.show({
         type: "warning",
@@ -110,7 +110,6 @@ export default function ShareModal({
       });
     } finally {
       setDownloading(false);
-      // Best-effort cleanup of the cached copy — not critical if it fails
       FileSystem.deleteAsync(localUri, { idempotent: true }).catch(() => {});
     }
   };
@@ -203,8 +202,8 @@ export default function ShareModal({
     });
 
     return () => {
-      showSub.remove;
-      hideSub.remove;
+      showSub.remove();
+      hideSub.remove();
     };
   }, []);
 
