@@ -1,3 +1,4 @@
+import CategoryGate from "@/components/CategoryGate";
 import { toastConfig } from "@/components/ToastNotification";
 import { AuthProvider } from "@/context/AuthContext";
 import { NavigationBar } from "expo-navigation-bar";
@@ -10,10 +11,15 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <AuthProvider>
+        <CategoryGate />
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="login" options={{ presentation: "modal" }} />
           <Stack.Screen name="register" options={{ presentation: "modal" }} />
+          <Stack.Screen
+            name="userCategories"
+            options={{ presentation: "modal" }}
+          />
           <Stack.Screen
             name="forgot-password"
             options={{ presentation: "modal" }}
