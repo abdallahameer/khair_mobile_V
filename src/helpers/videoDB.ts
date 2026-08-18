@@ -1,3 +1,15 @@
+export const VIDEO_CATEGORIES = [
+  "Technology & Programming",
+  "Business & Entrepreneurship",
+  "Finance & Investing",
+  "Design & Creativity",
+  "Education & Personal Development",
+  "Science, Culture & Knowledge",
+  "Religious",
+] as const;
+
+export type VideoCategory = (typeof VIDEO_CATEGORIES)[number];
+
 export interface Video {
   id: number | string;
   video?: string;
@@ -31,6 +43,8 @@ export interface UserProfileType {
     id: string;
     video_url: string;
     uploaded_at: string;
+    description: string;
+    category: string;
     likes_count: number;
     comments_count: number;
     views_count: number;
@@ -104,6 +118,12 @@ export interface LoginFormInputs {
 export interface VideosPage {
   videos: Video[];
   nextCursor: string | null;
+}
+
+export interface FeedPage {
+  videos: Video[];
+  hasMore: boolean;
+  nextOffset: number;
 }
 
 export interface Message {

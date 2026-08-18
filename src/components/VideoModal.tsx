@@ -76,7 +76,7 @@ export default function VideoModal({
 
   const goToProfile = () => {
     if (video?.user_id === user?.id) {
-      router.replace(`/(tabs)/profile/user`);
+      router.replace(`/(tabs)/profile/profile_user`);
     } else {
       router.replace(`/${video?.user_id}`);
     }

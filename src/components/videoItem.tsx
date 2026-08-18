@@ -73,7 +73,7 @@ export default function FeedItem({
 
   const goToProfile = () => {
     if (item.user_id === userId) {
-      router.replace(`/(tabs)/profile/user`);
+      router.replace(`/(tabs)/profile/profile_user`);
     } else {
       router.replace(`/${item.user_id}`);
     }

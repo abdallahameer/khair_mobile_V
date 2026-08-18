@@ -14,16 +14,6 @@ import {
 } from "react-native";
 import Toast from "react-native-toast-message";
 
-const VIDEO_CATEGORIES = [
-  "Technology & Programming",
-  "Business & Entrepreneurship",
-  "Finance & Investing",
-  "Design & Creativity",
-  "Education & Personal Development",
-  "Science, Culture & Knowledge",
-  "Religious",
-] as const;
-
 export default function Upload() {
   const router = useRouter();
   const [selectedAsset, setSelectedAsset] =
@@ -54,7 +44,6 @@ export default function Upload() {
       return;
     }
 
-    // Guards against double-submit — only one upload can be in flight at a time
     if (uploading) return;
 
     setUploading(true);
@@ -142,7 +131,6 @@ export default function Upload() {
     );
   }
 
-  // Step 2: video picked — collect description + category before posting
   if (selectedAsset) {
     return (
       <ScrollView
@@ -210,7 +198,6 @@ export default function Upload() {
     );
   }
 
-  // Step 1: pick a video
   return (
     <View className="items-center justify-center flex-1 gap-8 px-6 bg-black">
       <Text className="text-2xl font-bold text-white">Upload Video</Text>

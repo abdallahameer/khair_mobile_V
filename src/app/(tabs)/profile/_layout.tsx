@@ -4,7 +4,7 @@ export default function ProfileLayout() {
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="index" />
-      <Stack.Screen name="user" />
+      <Stack.Screen name="profile_user" />
     </Stack>
   );
 }

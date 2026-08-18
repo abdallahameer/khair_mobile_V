@@ -13,7 +13,7 @@ export default function ProfileTab() {
 
       const check = async () => {
         if (user) {
-          router.replace(`/(tabs)/profile/user`);
+          router.replace(`/(tabs)/profile/profile_user`);
         } else {
           setChecking(false);
         }

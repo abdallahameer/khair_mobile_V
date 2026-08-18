@@ -1,4 +1,5 @@
 import GridItem from "@/components/GridItems";
+import UserPreferedCategories from "@/components/userPreferedCategories";
 import { useAuth } from "@/context/AuthContext";
 import { fetcher } from "@/helpers/api";
 import { UserProfileType, VideosPage } from "@/helpers/videoDB";
@@ -6,7 +7,7 @@ import { usePost } from "@/hooks/Requests";
 import { Feather } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -16,6 +17,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import Popover from "react-native-popover-view";
 import Toast from "react-native-toast-message";
 import useSWR from "swr";
 import useSWRInfinite from "swr/infinite";
@@ -23,8 +25,9 @@ import useSWRInfinite from "swr/infinite";
 export default function OwnProfileScreen() {
   const router = useRouter();
   const [tab, setTab] = useState<"videos" | "liked" | "saved">("videos");
-  const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
-  const [uploadingImage, setUploadingImage] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const menuAnchor = useRef(null);
   const { post } = usePost();
   const { user, logout, loadingUser } = useAuth();
   const currentUserId = user?.id ?? null;
@@ -192,7 +195,6 @@ export default function OwnProfileScreen() {
 
     if (result.canceled || !result.assets[0]) return;
 
-    setUploadingImage(true);
     try {
       const file = result.assets[0];
       const formData = new FormData();
@@ -214,13 +216,18 @@ export default function OwnProfileScreen() {
         visibilityTime: 3000,
       });
     } finally {
-      setUploadingImage(false);
     }
   };
 
   const handleLogout = async () => {
+    setShowMenu(false);
     await logout();
     router.replace("/(tabs)/profile");
+  };
+
+  const handleOpenCategories = () => {
+    setShowMenu(false);
+    setShowCategoryModal(true);
   };
 
   if (isLoading || !profileData) {
@@ -235,11 +242,54 @@ export default function OwnProfileScreen() {
     <View className="flex-1 bg-black">
       <View>
         <View className="items-center pt-10 pb-4">
-          <Pressable onPress={() => router.replace("/(tabs)")}>
-            <View className="flex-row items-center justify-end w-full px-4 py-3">
+          <View className="flex-row items-center justify-between w-full px-4">
+            <Popover
+              isVisible={showMenu}
+              onRequestClose={() => setShowMenu(false)}
+              from={
+                <TouchableOpacity
+                  ref={menuAnchor}
+                  onPress={() => setShowMenu(true)}
+                >
+                  <Feather name="more-vertical" size={24} color="white" />
+                </TouchableOpacity>
+              }
+              popoverStyle={{
+                backgroundColor: "#18181b",
+                borderRadius: 12,
+                borderWidth: 1,
+                borderColor: "#27272a",
+              }}
+
+              backgroundStyle={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+            >
+              <View className="w-48 py-1">
+                <TouchableOpacity
+                  onPress={handleOpenCategories}
+                  className="flex-row items-center gap-3 px-4 py-3"
+                >
+                  <Feather name="sliders" size={18} color="#d1d5db" />
+                  <Text className="text-sm text-gray-200">
+                    Update interests
+                  </Text>
+                </TouchableOpacity>
+
+                <View className="h-px mx-2 bg-gray-800" />
+
+                <TouchableOpacity
+                  onPress={handleLogout}
+                  className="flex-row items-center gap-3 px-4 py-3"
+                >
+                  <Feather name="log-out" size={18} color="#ef4444" />
+                  <Text className="text-sm text-red-500">Logout</Text>
+                </TouchableOpacity>
+              </View>
+            </Popover>
+
+            <Pressable onPress={() => router.replace("/(tabs)")}>
               <Feather name="arrow-right" size={24} color="white" />
-            </View>
-          </Pressable>
+            </Pressable>
+          </View>
           <View className="relative">
             {profileData?.user?.profile_image ? (
               <Image
@@ -291,9 +341,6 @@ export default function OwnProfileScreen() {
               {new Date(profileData?.user?.created_at).toLocaleDateString()}
             </Text>
           </View>
-          <TouchableOpacity onPress={handleLogout} className="mt-3">
-            <Text className="text-sm text-gray-500">Logout</Text>
-          </TouchableOpacity>
         </View>
 
         <View className="flex-row border-t border-gray-800">
@@ -345,6 +392,11 @@ export default function OwnProfileScreen() {
           }
         />
       )}
+
+      <UserPreferedCategories
+        openCategory={showCategoryModal}
+        onCloseCategory={() => setShowCategoryModal(false)}
+      />
     </View>
   );
 }
