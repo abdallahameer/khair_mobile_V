@@ -4,7 +4,13 @@ import { Feather, FontAwesome, Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useVideoPlayer, VideoView } from "expo-video";
 import { useEffect, useRef, useState } from "react";
-import { Image, Pressable, Text, TouchableOpacity, View } from "react-native";
+import {
+  Image,
+  Text,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View,
+} from "react-native";
 
 const DESCRIPTION_PREVIEW_LENGTH = 30;
 
@@ -84,7 +90,7 @@ export default function FeedItem({
       style={{ height: itemHeight }}
       className="flex items-end justify-center h-full bg-black"
     >
-      <Pressable
+      <TouchableWithoutFeedback
         onPress={() => {
           if (player.playing) {
             player.pause();
@@ -100,8 +106,9 @@ export default function FeedItem({
           contentFit="contain"
           nativeControls={false}
         />
-      </Pressable>
+      </TouchableWithoutFeedback>
       <View
+        pointerEvents="box-none"
         className="absolute flex-col items-end gap-2 bottom-32 right-4"
         style={{ maxWidth: 240 }}
       >
@@ -130,7 +137,10 @@ export default function FeedItem({
         )}
       </View>
 
-      <View className="absolute items-center gap-5 bottom-36 left-3">
+      <View
+        pointerEvents="box-none"
+        className="absolute items-center gap-5 bottom-36 left-3"
+      >
         <TouchableOpacity onPress={goToProfile}>
           {item.profile_image ? (
             <Image

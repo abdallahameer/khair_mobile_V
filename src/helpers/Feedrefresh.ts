@@ -6,7 +6,6 @@ export function useFeedRefreshToken() {
   const { data } = useSWR<number>(FEED_REFRESH_KEY, null, {
     fallbackData: 0,
   });
-  console.log(data);
   return data ?? 0;
 }
 
