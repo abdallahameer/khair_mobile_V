@@ -12,16 +12,16 @@ import { useRouter } from "expo-router";
 import {
   Dimensions,
   Image,
-  Pressable,
   Text,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   View,
 } from "react-native";
 import Toast from "react-native-toast-message";
 import useSWR from "swr";
 import CommentsPanel from "./commentsPanel";
 
-const { height: itemHeight } = Dimensions.get("window");
+const { height: itemHeight } = Dimensions.get("screen");
 const DESCRIPTION_PREVIEW_LENGTH = 30;
 export default function VideoModal({
   videoId,
@@ -96,7 +96,7 @@ export default function VideoModal({
         >
           <Ionicons name="close" size={28} color="#ffffff" />
         </TouchableOpacity>
-        <Pressable
+        <TouchableWithoutFeedback
           onPress={() => {
             if (player.playing) {
               player.pause();
@@ -112,7 +112,7 @@ export default function VideoModal({
             contentFit="contain"
             nativeControls={false}
           />
-        </Pressable>
+        </TouchableWithoutFeedback>
 
         <View
           className="absolute flex-col items-end gap-2 bottom-32 right-4"
