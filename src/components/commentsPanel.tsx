@@ -2,6 +2,7 @@ import { useAuth } from "@/context/AuthContext";
 import { fetcher } from "@/helpers/api";
 import { usePost } from "@/hooks/Requests";
 import { Ionicons } from "@expo/vector-icons";
+import { usePathname } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
   FlatList,
@@ -41,6 +42,9 @@ export default function CommentsPanel({
   const [isKeyboardVisible, setIsKeyboardVisible] = useState<number>(0);
   const { post } = usePost();
   const { user } = useAuth();
+  const pathname = usePathname();
+
+  const isVideoPage = pathname.startsWith("/singleVideo");
   const insets = useSafeAreaInsets();
   const inputRef = useRef<TextInput>(null);
   const bottomInset = insets.bottom;
@@ -104,8 +108,6 @@ export default function CommentsPanel({
   }, []);
 
   if (!visible) return null;
-
-  const tabBarHeight = !withTapbar ? 100 : 0;
 
   return (
     <>
@@ -172,8 +174,12 @@ export default function CommentsPanel({
           style={{
             paddingBottom:
               isKeyboardVisible > 0
-                ? isKeyboardVisible - Math.max(bottomInset, 16) + tabBarHeight
-                : Math.max(bottomInset, 16),
+                ? isVideoPage
+                  ? isKeyboardVisible - Math.max(bottomInset, 16) + 110
+                  : isKeyboardVisible - Math.max(bottomInset, 16) + 10
+                : isVideoPage
+                  ? Math.max(bottomInset, 16) + 10
+                  : Math.max(bottomInset, 16) - 20,
           }}
         >
           <TextInput
