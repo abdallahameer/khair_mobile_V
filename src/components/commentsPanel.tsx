@@ -2,11 +2,12 @@ import { useAuth } from "@/context/AuthContext";
 import { fetcher } from "@/helpers/api";
 import { usePost } from "@/hooks/Requests";
 import { Ionicons } from "@expo/vector-icons";
-import { usePathname } from "expo-router";
+import { usePathname, useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
   FlatList,
   Keyboard,
+  Pressable,
   Text,
   TextInput,
   TouchableOpacity,
@@ -43,6 +44,7 @@ export default function CommentsPanel({
   const { post } = usePost();
   const { user } = useAuth();
   const pathname = usePathname();
+  const router = useRouter();
 
   const isVideoPage = pathname.startsWith("/singleVideo");
   const insets = useSafeAreaInsets();
@@ -151,15 +153,19 @@ export default function CommentsPanel({
           }
           renderItem={({ item }) => (
             <View className="flex-row gap-3">
-              <View className="items-center justify-center w-8 h-8 bg-gray-700 rounded-full">
-                <Text className="text-xs font-bold text-white">
-                  {item.username[0].toUpperCase()}
-                </Text>
-              </View>
+              <Pressable onPress={() => router.replace(`/${item.user_id}`)}>
+                <View className="items-center justify-center w-8 h-8 bg-gray-700 rounded-full">
+                  <Text className="text-xs font-bold text-white">
+                    {item.username[0].toUpperCase()}
+                  </Text>
+                </View>
+              </Pressable>
               <View className="flex-1">
-                <Text className="text-sm font-medium text-white">
-                  @{item.username}
-                </Text>
+                <Pressable onPress={() => router.replace(`/${item.user_id}`)}>
+                  <Text className="text-sm font-medium text-white">
+                    @{item.username}
+                  </Text>
+                </Pressable>
                 <Text className="text-sm text-gray-300">{item.text}</Text>
                 <Text className="mt-1 text-xs text-gray-500">
                   {new Date(item.created_at).toLocaleDateString()}
