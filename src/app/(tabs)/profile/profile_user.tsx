@@ -303,6 +303,12 @@ export default function OwnProfileScreen() {
                 </Text>
               </View>
             )}
+            <TouchableOpacity
+              onPress={handleImageUpload}
+              className="absolute items-center justify-center w-6 h-6 bg-red-500 rounded-full -bottom-3 left-9"
+            >
+              <Feather size={14} color="#fff" name="plus" />
+            </TouchableOpacity>
           </View>
           <View className="flex-row justify-center w-full">
             <Text className="mt-3 text-2xl font-bold text-white">
