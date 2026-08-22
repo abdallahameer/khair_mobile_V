@@ -1,4 +1,5 @@
 import ShareModal from "@/components/Sharemodal ";
+import { apiClient } from "@/helpers/api";
 import { Video } from "@/helpers/videoDB";
 import { Feather, FontAwesome, Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -11,6 +12,7 @@ import {
   TouchableWithoutFeedback,
   View,
 } from "react-native";
+import Toast from "react-native-toast-message";
 
 const DESCRIPTION_PREVIEW_LENGTH = 30;
 
@@ -40,7 +42,13 @@ export default function FeedItem({
 
   const [showFullDescription, setShowFullDescription] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(!!item.is_following);
+  const [followBusy, setFollowBusy] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    setIsFollowing(!!item.is_following);
+  }, [item.is_following]);
 
   const description = item.description ?? "";
   const isTruncatable = description.length > DESCRIPTION_PREVIEW_LENGTH;
@@ -79,12 +87,54 @@ export default function FeedItem({
 
   const goToProfile = () => {
     if (item.user_id === userId) {
-      router.replace(`/(tabs)/profile/profile_user`);
+      router.push(`/(tabs)/profile/profile_user`);
     } else {
-      router.replace(`/${item.user_id}`);
+      router.push(`/${item.user_id}`);
     }
   };
 
+  const followingHandler = async () => {
+    if (!userId) {
+      Toast.show({
+        type: "info",
+        text1: "Login required",
+        text2: "You need to login first",
+        visibilityTime: 3000,
+      });
+      return;
+    }
+
+    // Can't follow yourself
+    if (item.user_id === userId) return;
+    if (followBusy) return;
+
+    const wasFollowing = isFollowing;
+    setFollowBusy(true);
+    setIsFollowing(!wasFollowing); // optimistic
+
+    try {
+      if (wasFollowing) {
+        await apiClient.delete(`/api/users/${item.user_id}/follow`, {
+          data: { follower_id: userId },
+        });
+      } else {
+        await apiClient.post(`/api/users/${item.user_id}/follow`, {
+          follower_id: userId,
+        });
+      }
+    } catch {
+      setIsFollowing(wasFollowing); // rollback
+      Toast.show({
+        type: "error",
+        text1: "Something went wrong",
+        visibilityTime: 3000,
+      });
+    } finally {
+      setFollowBusy(false);
+    }
+  };
+
+  const isOwnVideo = item.user_id === userId;
   return (
     <View
       style={{ height: itemHeight }}
@@ -143,15 +193,43 @@ export default function FeedItem({
       >
         <TouchableOpacity onPress={goToProfile}>
           {item.profile_image ? (
-            <Image
-              source={{ uri: item.profile_image }}
-              className="w-10 h-10 border-2 border-gray-700 rounded-full"
-            />
+            <View className="relative items-center justify-center w-10 h-10">
+              <Image
+                source={{ uri: item.profile_image }}
+                className="w-14 h-14 border-2 border-gray-700 rounded-full"
+              />
+              {!isOwnVideo && (
+                <TouchableOpacity
+                  onPress={followingHandler}
+                  disabled={followBusy}
+                  className="absolute items-center justify-center w-6 h-6 bg-red-500 rounded-full -bottom-4"
+                >
+                  <Feather
+                    size={14}
+                    color="#fff"
+                    name={isFollowing ? "check" : "plus"}
+                  />
+                </TouchableOpacity>
+              )}
+            </View>
           ) : (
-            <View className="items-center justify-center w-10 h-10 bg-gray-800 border-2 border-gray-700 rounded-full">
+            <View className="relative items-center justify-center w-14 h-14 bg-gray-800 border-2 border-gray-700 rounded-full">
               <Text className="text-sm font-bold text-white">
                 {item.username[0].toUpperCase()}
               </Text>
+              {!isOwnVideo && (
+                <TouchableOpacity
+                  onPress={followingHandler}
+                  disabled={followBusy}
+                  className="absolute items-center justify-center w-6 h-6 bg-red-500 rounded-full -bottom-4"
+                >
+                  <Feather
+                    size={14}
+                    color="#fff"
+                    name={isFollowing ? "check" : "plus"}
+                  />
+                </TouchableOpacity>
+              )}
             </View>
           )}
         </TouchableOpacity>

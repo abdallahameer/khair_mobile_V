@@ -26,6 +26,7 @@ export interface Video {
   is_liked: number;
   is_saved: number;
   profile_image?: string | null;
+  is_following: number;
 }
 
 export interface UserProfileType {

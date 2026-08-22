@@ -119,7 +119,7 @@ export default function OtherProfileScreen() {
       <View className="flex-1 bg-black">
         <View>
           <View className="items-center pt-10 pb-4">
-            <Pressable onPress={() => router.replace("/(tabs)")}>
+            <Pressable onPress={() => router.back()}>
               <View className="flex-row items-center justify-end w-full px-4 py-3">
                 <Feather name="arrow-right" size={24} color="white" />
               </View>
