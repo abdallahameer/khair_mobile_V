@@ -150,3 +150,20 @@ export interface ConversationListItem {
   other_profile_image: string | null;
   has_unread: boolean;
 }
+
+export interface SearchUser {
+  id: string;
+  username: string;
+  profile_image: string | null;
+  followers_count: number;
+  is_following: number; // 0 or 1, same convention as Video.is_following
+}
+
+export interface SearchPage {
+  videos: Video[];
+  users: SearchUser[];
+  hasMoreVideos: boolean;
+  nextVideoOffset: number;
+  hasMoreUsers: boolean;
+  nextUserOffset: number;
+}
