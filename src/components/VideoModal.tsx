@@ -67,8 +67,6 @@ export default function VideoModal({
     if (video?.video_url) p.play();
   });
 
-  console.log(video?.is_following);
-
   useEffect(() => {
     if (video?.video_url) {
       player.play();
@@ -219,10 +217,10 @@ export default function VideoModal({
               {video?.profile_image ? (
                 <Image
                   source={{ uri: video.profile_image }}
-                  className="w-14 h-14 border-2 border-gray-700 rounded-full"
+                  className="border-2 border-gray-700 rounded-full w-14 h-14"
                 />
               ) : (
-                <View className="items-center justify-center w-14 h-14 bg-gray-800 border-2 border-gray-700 rounded-full">
+                <View className="items-center justify-center bg-gray-800 border-2 border-gray-700 rounded-full w-14 h-14">
                   <Text className="text-sm font-bold text-white">
                     {video?.username?.[0]?.toUpperCase()}
                   </Text>
