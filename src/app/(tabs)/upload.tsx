@@ -1,4 +1,6 @@
 import { useAuth } from "@/context/AuthContext";
+import { triggerFeedRefresh } from "@/helpers/Feedrefresh";
+import { VIDEO_CATEGORIES } from "@/helpers/videoDB";
 import { usePost } from "@/hooks/Requests";
 import { Feather, MaterialIcons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
@@ -70,6 +72,7 @@ export default function Upload() {
         visibilityTime: 3000,
       });
       resetForm();
+      triggerFeedRefresh();
       router.replace("/(tabs)");
     } catch (err: any) {
       Toast.show({
